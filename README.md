@@ -59,6 +59,96 @@ cp templates/specification-template.md /your-project/specs/your-feature.md
 Fill every block top to bottom, then hand it to your agent using the prompt at the bottom of
 the template (it lives in an HTML comment).
 
+## Get it on another machine (safe, contained, removable)
+
+This repo drops onto any machine — yours or someone else's, **Windows / macOS / Linux** —
+**without touching anything global**. By default the `/specify` interviewer ships *inside the
+repo's own `.claude/` folder*, which Claude Code loads **only** when you run it from this folder.
+So nothing is installed system-wide, and removing it is just deleting the folder.
+
+The steps below assume **no prior knowledge**. If a tool is already installed, skip that step.
+
+### Before you start: install the two prerequisites
+
+**1. Claude Code** — the interviewer runs inside it. Install it from
+**[claude.com/claude-code](https://claude.com/claude-code)**, then check it works:
+
+```
+claude --version
+```
+
+(The first time you run `claude` it may ask you to sign in — follow its prompt.)
+
+**2. Git** — used to download (clone) the repo.
+
+- **Windows (PowerShell):**
+  ```powershell
+  winget install --id Git.Git
+  ```
+- **macOS:** running `git --version` once will offer to install Apple's command-line tools; accept it. Or, with [Homebrew](https://brew.sh): `brew install git`
+- **Linux — Debian/Ubuntu:** `sudo apt update && sudo apt install git`
+- **Linux — Fedora:** `sudo dnf install git`
+
+Check it works (same command on every OS):
+
+```
+git --version
+```
+
+### Step 1 — Download (clone) the repo
+
+This command is the **same on Windows, macOS, and Linux**:
+
+```
+git clone https://github.com/hmbseaotter/agent-specification-toolkit.git
+```
+
+> **Already set up SSH keys with GitHub?** You can use
+> `git clone git@github.com:hmbseaotter/agent-specification-toolkit.git` instead. If you're not
+> sure what that means, use the HTTPS command above — it needs no setup.
+
+### Step 2 — Go into the folder
+
+```
+cd agent-specification-toolkit
+```
+
+### Step 3 — Start Claude Code and run the interviewer
+
+```
+claude
+```
+
+Then, at the Claude Code prompt, type:
+
+```
+/specify
+```
+
+That's it — `/specify` interviews you and writes a specification to `specs/`. (You can also name
+the target up front, e.g. `/specify a background PR-triage agent`.) It's available here **only**
+because it ships inside this repo's `.claude/` folder; no other project on the machine sees it.
+
+### Removing it
+
+Because the default install touches nothing global, removal is just **deleting the folder** —
+there is no leftover config to clean up. Run this from the folder that *contains* the clone:
+
+- **Windows (PowerShell):**
+  ```powershell
+  Remove-Item -Recurse -Force agent-specification-toolkit
+  ```
+- **macOS / Linux:**
+  ```bash
+  rm -rf agent-specification-toolkit
+  ```
+
+> **Want `/specify` in *every* project on a machine?** The toolkit also ships an **opt-in** global
+> installer (run from the clone) that copies the skill into your Claude Code user config, **backs
+> up** anything it would overwrite, **records exactly what it installed**, and **removes cleanly**
+> on uninstall. The project-local default above never needs it — full instructions land with that
+> installer.
+
 ## Edit & regenerate the cards
 
 Edit content in a card's `.html`, then regenerate its PDF one of two ways:
@@ -82,3 +172,7 @@ identically on any machine with no font installation.
 This toolkit prefers the full word **specification** over the abbreviation "spec" in names and
 filenames, since "spec" is ambiguous out of context. Inside the card's running prose, "spec"
 is left as idiomatic shorthand where the surrounding context makes the meaning unambiguous.
+
+## License
+
+[MIT](LICENSE) © hmbseaotter.
