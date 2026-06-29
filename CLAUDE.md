@@ -12,6 +12,10 @@ relitigate them, but flag any that look broken. Append new structural choices un
 - `interview/` — the Specification Interviewer. It is implemented as the `/specify` Claude Code
   **skill** at `.claude/skills/specify/SKILL.md`; `interview/README.md` documents it.
 - `scripts/regenerate.py` — renders every `reference-cards/*.html` to a sibling PDF.
+- `scripts/lint_spec.py` — deterministic, stdlib-only completeness linter for a spec file
+  (required blocks present, EARS/SHALL, no "should" in requirements, criteria present, phase
+  tags well-formed). ASCII output, cross-platform. The `/specify` skill runs it instead of
+  reasoning through the checks — the determinism principle applied to the toolkit itself.
 
 ## Build / render decisions (already made)
 - Cards are **US Letter, exactly 2 pages**, portrait. Keep to 2 pages.

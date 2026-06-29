@@ -28,7 +28,8 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 ├── interview/
 │   └── README.md                               # how the interviewer works
 ├── scripts/
-│   └── regenerate.py                           # re-render every card's PDF from its HTML
+│   ├── regenerate.py                           # re-render every card's PDF from its HTML
+│   └── lint_spec.py                            # deterministic spec completeness linter (stdlib)
 ├── requirements.txt
 └── CLAUDE.md                                    # context for Claude Code when you continue
 ```
@@ -62,6 +63,13 @@ project and fill it in, one file per feature or agent:
   ```powershell
   Copy-Item templates\specification-template.md C:\your-project\specs\your-feature.md
   ```
+
+**Check a specification.** Validate a filled-in spec's completeness — pure deterministic checks,
+no AI or tokens (same command on every OS):
+
+```
+python scripts/lint_spec.py specs/your-feature.md
+```
 
 Fill every block top to bottom, then hand it to your agent using the prompt at the bottom of
 the template (it lives in an HTML comment).
