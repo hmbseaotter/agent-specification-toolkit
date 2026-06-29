@@ -9,7 +9,8 @@ relitigate them, but flag any that look broken. Append new structural choices un
 - `reference-cards/*.html` — source of truth for each printable card. The matching `*.pdf` is a
   generated artifact; never hand-edit a PDF, regenerate it from its HTML.
 - `templates/specification-template.md` — the working skeleton end users copy per feature.
-- `interview/` — the planned Specification Interviewer. `interview/README.md` is its spec.
+- `interview/` — the Specification Interviewer. It is implemented as the `/specify` Claude Code
+  slash command at `.claude/commands/specify.md`; `interview/README.md` documents it.
 - `scripts/regenerate.py` — renders every `reference-cards/*.html` to a sibling PDF.
 
 ## Build / render decisions (already made)
@@ -44,3 +45,7 @@ where context disambiguates.
   cards.
 - Planned next: build the Specification Interviewer (form factor undecided — see
   `interview/README.md`).
+- 2026-06: Built the Specification Interviewer as the `/specify` Claude Code slash command
+  (`.claude/commands/specify.md`). Chose a reasoning-driven command over a static form because the
+  hard part is elicitation quality (pushing back on vague answers, handling the user's tangents).
+  If it grows supporting files or branches, graduate it to a Claude Code skill (`SKILL.md`).

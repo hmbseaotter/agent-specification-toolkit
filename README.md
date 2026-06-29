@@ -12,19 +12,21 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 |-----------|--------|------------|
 | **Reference cards** (`reference-cards/`) | ✅ ready | Printable US-Letter infographics — the at-a-glance method. |
 | **Specification template** (`templates/`) | ✅ ready | Copy-paste skeleton you fill in, one file per feature. |
-| **Specification interviewer** (`interview/`) | 🚧 planned | A guided Q&A that helps — and forces — you to supply every input the agent needs, then writes a filled-in specification. See `interview/README.md`. |
+| **Specification interviewer** (`/specify`) | ✅ ready | A Claude Code slash command that runs a guided Q&A — helping and forcing you to supply every input the agent needs — then writes a filled-in specification to `specs/`. See `interview/README.md`. |
 
 ## Layout
 
 ```
 .
+├── .claude/commands/
+│   └── specify.md                              # the /specify interviewer (Claude Code slash command)
 ├── reference-cards/
 │   ├── agent-specification-field-guide.html   # editable source (fonts embedded — self-contained)
 │   └── agent-specification-field-guide.pdf     # print-ready, 2 pages, US Letter
 ├── templates/
 │   └── specification-template.md               # the copy-paste skeleton
 ├── interview/
-│   └── README.md                               # design notes for the planned interviewer
+│   └── README.md                               # how the interviewer works
 ├── scripts/
 │   └── regenerate.py                           # re-render every card's PDF from its HTML
 ├── requirements.txt
@@ -32,6 +34,17 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 ```
 
 ## Use it now
+
+**Run the interviewer.** From the repo root, start Claude Code and invoke the command (it ships
+with the repo, so cloning is enough):
+
+```
+claude
+/specify password reset flow
+```
+
+It interviews you one question at a time, won't let required blocks stay empty, and writes the
+result to `specs/<feature>.md`. Omit the argument to have it ask what you're specifying.
 
 **Print a card.** Open the PDF in `reference-cards/` and print at *Actual size / 100%* (not
 "fit to page"), paper **Letter**, margins **None**.
