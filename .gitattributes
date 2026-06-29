@@ -1,0 +1,8 @@
+# Stable line endings across Windows / macOS / Linux clones.
+# Normalise all text to LF in the repo and on checkout (silences CRLF warnings).
+* text=auto eol=lf
+
+# Binary assets — never normalise.
+*.pdf binary
+*.png binary
+*.woff2 binary
