@@ -1,0 +1,15 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# node (only used to source fonts; not committed)
+node_modules/
+package-lock.json
+
+# build scratch / screenshots
+crit_*.png
+*_check.png
+fonts_b64.txt
+.DS_Store
