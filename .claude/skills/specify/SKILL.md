@@ -16,10 +16,16 @@ into **implementation phases the user chooses from**, and hand off a **build pro
 chosen phase**. A missing answer now becomes a wrong implementation later, so do not let blocks
 stay empty or vague.
 
-**Authoritative spec structure:** write specs using the skeleton in
-`templates/specification-template.md` (shipped with this toolkit). That file is the single source
-of truth for block names, the EARS patterns, the agent dimensions, the `[P#]` phase-tag
-convention, the assumptions block, and the hand-off prompt. Read it before assembling a spec.
+**Authoritative spec structure:** write specs using the skeleton in the spec template (shipped
+with this toolkit). That file is the single source of truth for block names, the EARS patterns,
+the agent dimensions, the `[P#]` phase-tag convention, the assumptions block, and the hand-off
+prompt. Read it before assembling a spec.
+
+**Companion files (where to find them):** this skill uses two helper files. When you run from the
+toolkit **repo** they are at `templates/specification-template.md` and `scripts/lint_spec.py`. When
+the skill is **installed globally** they sit **next to this `SKILL.md`** as
+`specification-template.md` and `lint_spec.py`. Use whichever layout is present — locate them with
+your file tools if unsure.
 
 **Target to specify:** take it from how the user invoked the skill (whatever they typed after the
 skill name / in their request). If that is empty, your **first question** is what we are
@@ -128,11 +134,11 @@ Work the blocks defined in `templates/specification-template.md`. In order:
    structure, and show it to the user for edits.
 2. Run the **regeneration test** out loud: *could an agent rebuild this from the spec alone and
    produce behaviourally identical output?* Name anything still missing; offer to fill it.
-3. **Deterministic completeness check — use the linter, not tokens.** If
-   `scripts/lint_spec.py` is present in the toolkit, run it:
-   `python scripts/lint_spec.py specs/<slug>.md` and fix whatever it flags (each requirement →
-   ≥1 criterion; no "should" in requirements; non-empty out-of-scope; required blocks present;
-   valid phase tags). Applying the determinism principle to this skill itself: don't burn tokens
+3. **Deterministic completeness check — use the linter, not tokens.** Run the companion
+   `lint_spec.py` on the spec — `python scripts/lint_spec.py specs/<slug>.md` from the repo, or the
+   copy beside this skill if installed globally — and fix whatever it flags (each requirement → ≥1
+   criterion; no "should" in requirements; non-empty out-of-scope; required blocks present; valid
+   phase tags). Applying the determinism principle to this skill itself: don't burn tokens
    re-deriving checks that code can do.
 
 ---

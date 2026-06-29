@@ -30,6 +30,8 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 ├── scripts/
 │   ├── regenerate.py                           # re-render every card's PDF from its HTML
 │   └── lint_spec.py                            # deterministic spec completeness linter (stdlib)
+├── install.py                                  # opt-in global installer (stdlib, cross-platform)
+├── uninstall.py                                # clean uninstaller (manifest-based; restores backups)
 ├── requirements.txt
 └── CLAUDE.md                                    # context for Claude Code when you continue
 ```
@@ -161,8 +163,30 @@ there is no leftover config to clean up. Run this from the folder that *contains
 > **Want `/specify` in *every* project on a machine?** The toolkit also ships an **opt-in** global
 > installer (run from the clone) that copies the skill into your Claude Code user config, **backs
 > up** anything it would overwrite, **records exactly what it installed**, and **removes cleanly**
-> on uninstall. The project-local default above never needs it — full instructions land with that
-> installer.
+> on uninstall. The project-local default above never needs it — instructions are just below.
+
+### Install for every project (optional, global)
+
+Run these **from inside the clone**. They need only **Python 3.8+** (standard library — no
+`pip install`), and the command is the **same on Windows, macOS, and Linux**:
+
+```
+python install.py            # copy /specify into your Claude Code user skills directory
+python install.py --dry-run  # preview exactly what it would do, change nothing
+```
+
+The installer writes **only** under `~/.claude/skills/specify/`, never touches your settings or
+hooks, and if you already have a skill at that name it is **backed up** (moved aside), never
+overwritten. It records what it did in a manifest so removal is exact and reversible:
+
+```
+python uninstall.py                # remove the install and restore any backup it made
+python uninstall.py --dry-run      # preview
+python uninstall.py --keep-backup  # remove the install but leave the backup in place
+```
+
+After a global install, `/specify` works in every project. After uninstall, your `~/.claude` is
+left as it was — any skill the installer backed up is restored.
 
 ## Edit & regenerate the cards
 

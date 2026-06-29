@@ -16,6 +16,11 @@ relitigate them, but flag any that look broken. Append new structural choices un
   (required blocks present, EARS/SHALL, no "should" in requirements, criteria present, phase
   tags well-formed). ASCII output, cross-platform. The `/specify` skill runs it instead of
   reasoning through the checks — the determinism principle applied to the toolkit itself.
+- `install.py` / `uninstall.py` — opt-in **global** install of the `/specify` skill into
+  `~/.claude/skills/specify/` (stdlib, cross-platform). Installs SKILL.md + flat copies of the
+  template and linter (so the skill finds its companions beside it); backs up any collision,
+  writes a `.install-manifest.json`, and uninstalls cleanly (restoring backups). The project-local
+  default (run `claude` from the clone) needs neither.
 
 ## Build / render decisions (already made)
 - Cards are **US Letter, exactly 2 pages**, portrait. Keep to 2 pages.
