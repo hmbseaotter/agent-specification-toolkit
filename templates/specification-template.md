@@ -10,6 +10,9 @@ HOW TO USE
 4. The "assumptions" block near the bottom is a REVIEW GATE: every assumption made during
    writing is listed there to be confirmed or corrected BEFORE any build starts.
 5. Hand off with the prompt at the very bottom of this file.
+6. Phase tags: tag each in-scope item, requirement, and acceptance criterion with the
+   implementation phase it belongs to — [P1], [P2], … (see "implementation phases" below).
+   The build prompt is scoped to ONE phase; the spec itself always stays the whole target.
 
 Keyword convention (RFC 2119 / 8174): SHALL = MUST = absolute, verifiable requirement.
 We use SHALL for every requirement on purpose. If a line is only a "should," it is not a
@@ -28,9 +31,9 @@ requirement — cut it, or move it to "prior decisions."
 [e.g. A user who has forgotten their password reaches their dashboard in under 2 minutes,
 via email, with no manual support intervention.]
 
-## in scope
-- [Concrete thing the agent SHALL build]
-- [Concrete thing]
+## in scope   <!-- tag each item with its phase: [P1], [P2], … -->
+- [P1] [Concrete thing the agent SHALL build]
+- [P2] [Concrete thing — deferred to a later push, but still part of the target]
 
 ## out of scope (v1)
 <!-- As load-bearing as "in scope." With no exclusions, the agent builds the most complete
@@ -104,6 +107,7 @@ Rule: don't relitigate these — BUT you may flag one that looks unsafe or broke
 ## requirements
 <!-- Each requirement = one trigger + one verifiable response, in EARS.
 All five patterns below. Every requirement must trace to >=1 acceptance criterion.
+Tag each requirement with its phase: [P1], [P2], …
 For an agent, write its behaviour here too (e.g. budget/escalation rules as IF/WHEN). -->
 
 ### ubiquitous (always active)
@@ -139,7 +143,7 @@ For an agent, write its behaviour here too (e.g. budget/escalation rules as IF/W
 the agent's say-so). Don't mark the task complete until every box passes — by test, not vibe. -->
 
 ### happy path
-- [ ] [Testable pass/fail check, e.g. "valid email -> reset email arrives within 5s"]
+- [ ] [P1] [Testable pass/fail check, e.g. "valid email -> reset email arrives within 5s"]
 - [ ] [Testable check]
 
 ### edge cases
@@ -150,6 +154,37 @@ the agent's say-so). Don't mark the task complete until every box passes — by 
 - [ ] [e.g. "no new tables beyond X"]
 - [ ] [e.g. "email sent via Resend, not another provider"]
 - [ ] [AGENT bright-line: "never pushes to a remote without a human checkpoint" — assert it]
+
+---
+
+## implementation phases   <!-- a VIEW over this spec — it slices the build, not the target -->
+<!--
+The spec above is the complete, production-grade target. This block records how the build is
+SLICED so a first push ships a thin working slice and hardens later. It never shrinks the target.
+- Each in-scope item / requirement / acceptance criterion above carries a phase tag: [P1], [P2], …
+- A phase is DONE when its tagged acceptance criteria pass — by running them.
+- "Skeleton" items are the architecturally-required floor for a coherent first slice; they are
+  marked (required). Drop one only with an explicit reason recorded here.
+- Advancing to the next phase re-slices THIS spec — no re-interview needed.
+- Collapse or expand the phase count to fit complexity (a small target may need only P1 + P2).
+-->
+
+### phase 1 — [skeleton / walking slice]
+- Goal: [the thinnest version that delivers the core outcome end-to-end]
+- Includes: [the required floor + any optional [P1] items chosen for the first push]
+- Done when: [its tagged acceptance criteria pass]
+
+### phase 2 — [robustness]
+- Goal: [error handling, escalation, edge cases]
+- Includes: [P2 items]
+
+### phase 3 — [hardening]
+- Goal: [security, observability, performance]
+- Includes: [P3 items]
+
+### phase 4 — [optimization / optional]
+- Goal: [cost & model-routing tuning, nice-to-haves]
+- Includes: [P4 items]
 
 ---
 
@@ -182,9 +217,12 @@ Work in this order:
 2. Review the "assumptions" list. Flag any assumption that looks wrong or risky and confirm it
    with me BEFORE building — this is the highest-leverage step.
 3. List any remaining ambiguities or missing information.
-4. Write the implementation against the requirements section. Honour the "model & cost routing +
-   determinism boundary" block: implement everything listed as deterministic in plain code (no
-   LLM calls); reserve model calls for the judgment tasks named, at the model tier specified.
+4. Build ONLY the phase targeted by the accompanying build prompt (the items tagged for it).
+   Treat higher-phase items as documented-but-not-yet: do not build them, but do not make
+   architectural choices that block them. Within the target phase, write the implementation
+   against the requirements section. Honour the "model & cost routing + determinism boundary"
+   block: implement everything listed as deterministic in plain code (no LLM calls); reserve
+   model calls for the judgment tasks named, at the model tier specified.
 5. Respect every "NEVER do unattended" bright line — pause for a human checkpoint there.
 6. After implementation, verify each acceptance criterion one by one — by RUNNING it.
 7. Do not mark the task complete until all acceptance criteria pass.
