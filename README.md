@@ -12,14 +12,14 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 |-----------|--------|------------|
 | **Reference cards** (`reference-cards/`) | ✅ ready | Printable US-Letter infographics — the at-a-glance method. |
 | **Specification template** (`templates/`) | ✅ ready | Copy-paste skeleton you fill in, one file per feature. |
-| **Specification interviewer** (`/specify`) | ✅ ready | A Claude Code slash command that runs a guided Q&A — helping and forcing you to supply every input the agent needs — then writes a filled-in specification to `specs/`. See `interview/README.md`. |
+| **Specification interviewer** (`/specify`) | ✅ ready | A Claude Code **skill** that runs a guided interview — helping and forcing you to supply every input an agent needs — then writes a complete specification to `specs/`, derives a phased build plan you choose from, and emits a phase-scoped build prompt. See `interview/README.md`. |
 
 ## Layout
 
 ```
 .
-├── .claude/commands/
-│   └── specify.md                              # the /specify interviewer (Claude Code slash command)
+├── .claude/skills/specify/
+│   └── SKILL.md                                # the /specify interviewer (Claude Code skill)
 ├── reference-cards/
 │   ├── agent-specification-field-guide.html   # editable source (fonts embedded — self-contained)
 │   └── agent-specification-field-guide.pdf     # print-ready, 2 pages, US Letter
@@ -35,26 +35,33 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 
 ## Use it now
 
-**Run the interviewer.** From the repo root, start Claude Code and invoke the command (it ships
+**Run the interviewer.** From the repo root, start Claude Code and invoke the skill (it ships
 with the repo, so cloning is enough):
 
 ```
 claude
-/specify password reset flow
+/specify a background PR-triage agent
 ```
 
-It interviews you one question at a time, won't let required blocks stay empty, and writes the
-result to `specs/<feature>.md`. Omit the argument to have it ask what you're specifying.
+It interviews you one question at a time, won't let required blocks stay empty, surfaces every
+assumption for your review, then helps you choose how far this first build goes — writing the
+specification to `specs/<slug>.md` alongside a build prompt scoped to that phase. Omit the target
+and it asks what you're specifying.
 
 **Print a card.** Open the PDF in `reference-cards/` and print at *Actual size / 100%* (not
 "fit to page"), paper **Letter**, margins **None**.
 
-**Write a specification.** Copy the template into your project and fill it in, one file per
-feature:
+**Write a specification by hand** (instead of the interviewer). Copy the template into your
+project and fill it in, one file per feature or agent:
 
-```bash
-cp templates/specification-template.md /your-project/specs/your-feature.md
-```
+- **macOS / Linux:**
+  ```bash
+  cp templates/specification-template.md /your-project/specs/your-feature.md
+  ```
+- **Windows (PowerShell):**
+  ```powershell
+  Copy-Item templates\specification-template.md C:\your-project\specs\your-feature.md
+  ```
 
 Fill every block top to bottom, then hand it to your agent using the prompt at the bottom of
 the template (it lives in an HTML comment).
