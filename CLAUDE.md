@@ -30,7 +30,7 @@ relitigate them, but flag any that look broken. Append new structural choices un
   IF=coral, WHERE=violet, values/optional=green, "added this edition"=acid-green.
 - Rendering: HTML→PDF via **Playwright Chromium**, `print_background=True`,
   `prefer_css_page_size=True`, zero margins; print CSS uses `@page { size: letter }`.
-- Regenerate after editing any card HTML:
+- Regenerate after editing any card HTML (`python`/`pip` shown; on macOS/Linux use `python3`/`pip3`):
   ```bash
   pip install -r requirements.txt && python -m playwright install chromium
   python scripts/regenerate.py

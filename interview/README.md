@@ -59,7 +59,7 @@ README — the project-local default (running it from this repo) needs no instal
 
 ## What it elicits (the spec blocks)
 
-The six core blocks — **outcome, scope (in/out), constraints, prior decisions, requirements (EARS),
+The six core blocks — **outcome, scope (in/out), constraints, prior decisions, requirements (EARS — Easy Approach to Requirements Syntax),
 acceptance criteria** — plus, when the target is an agent, the **agent dimensions**: control surface
 (including a mandatory STOP condition), triggers & scheduling, tools & permissions (+ "never do
 unattended" bright lines), state & memory, **model & cost routing + determinism boundary**, and

@@ -38,6 +38,9 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 
 ## Use it now
 
+> **Command note:** where commands say `python` / `pip`, that is the **Windows** form. On
+> **macOS / Linux**, use `python3` / `pip3` instead. Forward slashes in paths work on all three OSes.
+
 **Run the interviewer.** From the repo root, start Claude Code and invoke the skill (it ships
 with the repo, so cloning is enough):
 
@@ -67,7 +70,7 @@ project and fill it in, one file per feature or agent:
   ```
 
 **Check a specification.** Validate a filled-in spec's completeness — pure deterministic checks,
-no AI or tokens (same command on every OS):
+no AI or tokens:
 
 ```
 python scripts/lint_spec.py specs/your-feature.md
@@ -78,115 +81,96 @@ the template (it lives in an HTML comment).
 
 ## Get it on another machine (safe, contained, removable)
 
-This repo drops onto any machine — yours or someone else's, **Windows / macOS / Linux** —
-**without touching anything global**. By default the `/specify` interviewer ships *inside the
-repo's own `.claude/` folder*, which Claude Code loads **only** when you run it from this folder.
-So nothing is installed system-wide, and removing it is just deleting the folder.
+This repo drops onto any machine — yours or someone else's — **without touching anything global**.
+By default the `/specify` interviewer ships *inside the repo's own `.claude/` folder*, which Claude
+Code loads **only** when you run it from this folder: nothing is installed system-wide, and removing
+it is just deleting the folder.
 
-The steps below assume **no prior knowledge**. If a tool is already installed, skip that step.
+**Pick your OS below and copy its block top to bottom**; ignore the other two. Steps assume no prior
+knowledge — skip any tool you already have. (Forward slashes in paths work on all three OSes.)
 
-### Before you start: install the two prerequisites
+### Windows (PowerShell)
 
-**1. Claude Code** — the interviewer runs inside it. Install it from
-**[claude.com/claude-code](https://claude.com/claude-code)**, then check it works:
+```powershell
+# 1. Prerequisites (skip any you already have):
+#    Claude Code -> install from https://claude.com/claude-code   (then check: claude --version)
+winget install --id Git.Git          # Git  (then check: git --version)
 
-```
-claude --version
-```
-
-(The first time you run `claude` it may ask you to sign in — follow its prompt.)
-
-**2. Git** — used to download (clone) the repo.
-
-- **Windows (PowerShell):**
-  ```powershell
-  winget install --id Git.Git
-  ```
-- **macOS:** running `git --version` once will offer to install Apple's command-line tools; accept it. Or, with [Homebrew](https://brew.sh): `brew install git`
-- **Linux — Debian/Ubuntu:** `sudo apt update && sudo apt install git`
-- **Linux — Fedora:** `sudo dnf install git`
-
-Check it works (same command on every OS):
-
-```
-git --version
-```
-
-### Step 1 — Download (clone) the repo
-
-This command is the **same on Windows, macOS, and Linux**:
-
-```
+# 2. Download (clone) and enter the repo:
 git clone https://github.com/hmbseaotter/agent-specification-toolkit.git
-```
-
-> **Already set up SSH keys with GitHub?** You can use
-> `git clone git@github.com:hmbseaotter/agent-specification-toolkit.git` instead. If you're not
-> sure what that means, use the HTTPS command above — it needs no setup.
-
-### Step 2 — Go into the folder
-
-```
 cd agent-specification-toolkit
-```
 
-### Step 3 — Start Claude Code and run the interviewer
-
-```
+# 3. Start Claude Code, then type  /specify  at its prompt:
 claude
+
+# 4. (Optional) make /specify available in EVERY project on this machine:
+python install.py                    # undo later with:  python uninstall.py
+
+# 5. Remove the toolkit entirely — run from the folder that CONTAINS the clone:
+Remove-Item -Recurse -Force agent-specification-toolkit
 ```
 
-Then, at the Claude Code prompt, type:
+### macOS
 
-```
-/specify
-```
+```bash
+# 1. Prerequisites (skip any you already have):
+#    Claude Code -> install from https://claude.com/claude-code   (then check: claude --version)
+brew install git                     # Git  (or run `git --version` to trigger Apple's CLT installer)
 
-That's it — `/specify` interviews you and writes a specification to `specs/`. (You can also name
-the target up front, e.g. `/specify a background PR-triage agent`.) It's available here **only**
-because it ships inside this repo's `.claude/` folder; no other project on the machine sees it.
+# 2. Download (clone) and enter the repo:
+git clone https://github.com/hmbseaotter/agent-specification-toolkit.git
+cd agent-specification-toolkit
 
-### Removing it
+# 3. Start Claude Code, then type  /specify  at its prompt:
+claude
 
-Because the default install touches nothing global, removal is just **deleting the folder** —
-there is no leftover config to clean up. Run this from the folder that *contains* the clone:
+# 4. (Optional) make /specify available in EVERY project on this machine:
+python3 install.py                   # undo later with:  python3 uninstall.py
 
-- **Windows (PowerShell):**
-  ```powershell
-  Remove-Item -Recurse -Force agent-specification-toolkit
-  ```
-- **macOS / Linux:**
-  ```bash
-  rm -rf agent-specification-toolkit
-  ```
-
-> **Want `/specify` in *every* project on a machine?** The toolkit also ships an **opt-in** global
-> installer (run from the clone) that copies the skill into your Claude Code user config, **backs
-> up** anything it would overwrite, **records exactly what it installed**, and **removes cleanly**
-> on uninstall. The project-local default above never needs it — instructions are just below.
-
-### Install for every project (optional, global)
-
-Run these **from inside the clone**. They need only **Python 3.8+** (standard library — no
-`pip install`), and the command is the **same on Windows, macOS, and Linux**:
-
-```
-python install.py            # copy /specify into your Claude Code user skills directory
-python install.py --dry-run  # preview exactly what it would do, change nothing
+# 5. Remove the toolkit entirely — run from the folder that CONTAINS the clone:
+rm -rf agent-specification-toolkit
 ```
 
-The installer writes **only** under `~/.claude/skills/specify/`, never touches your settings or
-hooks, and if you already have a skill at that name it is **backed up** (moved aside), never
-overwritten. It records what it did in a manifest so removal is exact and reversible:
+### Linux
 
-```
-python uninstall.py                # remove the install and restore any backup it made
-python uninstall.py --dry-run      # preview
-python uninstall.py --keep-backup  # remove the install but leave the backup in place
+```bash
+# 1. Prerequisites (skip any you already have):
+#    Claude Code -> install from https://claude.com/claude-code   (then check: claude --version)
+sudo apt update && sudo apt install git     # Debian/Ubuntu   (Fedora: sudo dnf install git)
+
+# 2. Download (clone) and enter the repo:
+git clone https://github.com/hmbseaotter/agent-specification-toolkit.git
+cd agent-specification-toolkit
+
+# 3. Start Claude Code, then type  /specify  at its prompt:
+claude
+
+# 4. (Optional) make /specify available in EVERY project on this machine:
+python3 install.py                   # undo later with:  python3 uninstall.py
+
+# 5. Remove the toolkit entirely — run from the folder that CONTAINS the clone:
+rm -rf agent-specification-toolkit
 ```
 
-After a global install, `/specify` works in every project. After uninstall, your `~/.claude` is
-left as it was — any skill the installer backed up is restored.
+> **SSH instead of HTTPS?** If you have set up SSH keys with GitHub, swap the clone URL for
+> `git@github.com:hmbseaotter/agent-specification-toolkit.git`. If that means nothing to you, the
+> HTTPS command above needs no setup. (Note: while this repo is private, cloning requires access;
+> the HTTPS clone works for everyone once it is public.)
+
+### About the optional global install (step 4)
+
+You only need step 4 to use `/specify` *outside* this repo — the project-local default never does.
+`install.py` needs only **Python 3.8+** (standard library — no `pip install`). It writes **only**
+under `~/.claude/skills/specify/`, never touches your settings or hooks, and if a skill already
+exists at that name it is **backed up** (moved aside), never overwritten — recording a manifest so
+removal is exact and reversible:
+
+- `install.py --dry-run` — preview exactly what it would do, change nothing.
+- `uninstall.py` — remove the install and restore any backup it made.
+- `uninstall.py --keep-backup` — remove the install but leave the backup in place.
+
+After a global install, `/specify` works in every project; after uninstall your `~/.claude` is left
+as it was.
 
 ## Edit & regenerate the cards
 
@@ -195,9 +179,10 @@ Edit content in a card's `.html`, then regenerate its PDF one of two ways:
 **A. Browser (no install).** Open the `.html` → Print → *Save as PDF* → paper Letter, margins
 None, and enable **"Background graphics"** (browsers strip color backgrounds otherwise).
 
-**B. Script (repeatable, renders all cards).**
+**B. Script (repeatable, renders all cards).** (`python` / `pip` shown; on macOS/Linux use
+`python3` / `pip3`.)
 
-```bash
+```
 pip install -r requirements.txt
 python -m playwright install chromium
 python scripts/regenerate.py

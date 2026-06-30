@@ -135,8 +135,9 @@ Work the blocks defined in `templates/specification-template.md`. In order:
 2. Run the **regeneration test** out loud: *could an agent rebuild this from the spec alone and
    produce behaviourally identical output?* Name anything still missing; offer to fill it.
 3. **Deterministic completeness check — use the linter, not tokens.** Run the companion
-   `lint_spec.py` on the spec — `python scripts/lint_spec.py specs/<slug>.md` from the repo, or the
-   copy beside this skill if installed globally — and fix whatever it flags (each requirement → ≥1
+   `lint_spec.py` on the spec — `python scripts/lint_spec.py specs/<slug>.md` (use `python3` on
+   macOS/Linux) from the repo, or the copy beside this skill if installed globally — and fix
+   whatever it flags (each requirement → ≥1
    criterion; no "should" in requirements; non-empty out-of-scope; required blocks present; valid
    phase tags). Applying the determinism principle to this skill itself: don't burn tokens
    re-deriving checks that code can do.
