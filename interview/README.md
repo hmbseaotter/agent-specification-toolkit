@@ -1,7 +1,8 @@
 # Specification Interviewer
 
-A guided, reasoning-driven interview that helps — and gently forces — you to supply every input an
-AI coding agent needs before it builds a target **agent or feature**. It removes the failure mode
+A guided, reasoning-driven interview that helps — and gently forces — you to supply every input a
+**building agent** (the AI coding tool that writes the code — Claude Code, Cursor, Aider, …) needs
+before it builds your target **agent or feature**. It removes the failure mode
 the reference cards warn about: deferring the hard questions until the code already exists. Its
 outputs are a **complete specification** (the production-grade target) written to `specs/<slug>.md`,
 a reviewed **assumptions list**, and a **build prompt scoped to the build phase you choose**.
@@ -16,10 +17,15 @@ handling your own questions and tangents — which a fixed questionnaire can't d
 slash command and graduated to a skill once it grew the multi-step flow below.)
 
 ### Use it
-From the repo root (the skill ships with the repo, so cloning is enough):
+From the repo root (the skill ships with the repo, so cloning is enough), start Claude Code:
 
 ```
 claude
+```
+
+Then, at the Claude Code prompt, name what you're building:
+
+```
 /specify a background PR-triage agent
 ```
 
@@ -53,8 +59,10 @@ README — the project-local default (running it from this repo) needs no instal
    effort** fit the chosen phase — flagging both *under-powered* (risking a poor build) and
    *over-powered* (wasting money). You explicitly proceed or adjust; the call is yours, on the
    record.
-7. **Three outputs.** The spec (`specs/<slug>.md`), the reviewed assumptions list, and a build
-   prompt **scoped to the chosen phase** — build only this phase, and don't make choices that block
+7. **Three outputs, all under `specs/`.** The specification (`specs/<slug>.md`, which embeds the
+   reviewed assumptions list) and a phase-scoped **build prompt** written to
+   `specs/<slug>.build-prompt.md` — the file you hand to a **building agent** (Claude Code, Cursor,
+   Aider, …) to implement the chosen phase. Build only that phase; don't make choices that block
    later ones.
 
 ## What it elicits (the spec blocks)
@@ -75,11 +83,16 @@ skill applies the same rule to itself — mechanical checks go to the linter, no
 ## Living specs
 
 A spec is a starting point, not a monolith. It is version-controlled, carries a changelog, and the
-skill supports two cheap update paths:
-- **Amend** — when a build surprise changes the spec, re-enter the interview on just the affected
-  block; it re-checks only the delta and logs the change to the changelog.
-- **Advance a phase** — to build the next phase, the skill *deterministically re-slices* the same
-  spec and emits the next build prompt. No re-interview, no elicitation spend.
+skill supports two cheap update paths. **To use either, open the skill and say what you want:**
+
+- **Amend** — when a build surprise changes the spec. Run `/specify` and name the spec and block,
+  e.g. *"amend `specs/pr-triage-agent.md`, the constraints block — we're dropping the cron trigger."*
+  The skill re-enters the interview on just that block, re-checks only the delta, bumps the version,
+  and logs the change to the changelog — no re-answering everything.
+- **Advance a phase** — when the current phase is built and you want the next. Run `/specify` and say
+  e.g. *"advance `specs/pr-triage-agent.md` to the next phase."* The skill *deterministically
+  re-slices* the same spec and emits the next phase's build prompt — no re-interview, no token spend
+  on elicitation.
 
 ## Design principles it enforces
 - **Gate, don't nag** — won't emit a finished spec until each block meets its bar.

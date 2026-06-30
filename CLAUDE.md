@@ -5,10 +5,17 @@ AI coding agent can execute. Treat this file as the repo's own "prior decisions"
 relitigate them, but flag any that look broken. Append new structural choices under
 "Decisions made."
 
+## Terminology — three distinct roles
+Keep these straight throughout the docs:
+- **Target agent** — the agent (or feature) you are *specifying*; the product to be built.
+- **Building agent** — the AI coding tool that *consumes* this skill's spec + build prompt and writes
+  the code (e.g. Claude Code, Cursor, Aider, GitHub Copilot/Workspace, Windsurf).
+- **The interviewer** — the `/specify` skill in this repo; it produces the spec, it does **not** build.
+
 ## Components & where things live
 - `reference-cards/*.html` — source of truth for each printable card. The matching `*.pdf` is a
   generated artifact; never hand-edit a PDF, regenerate it from its HTML.
-- `templates/specification-template.md` — the working skeleton end users copy per feature.
+- `templates/specification-template.md` — the working skeleton end users copy per agent (or feature).
 - `interview/` — the Specification Interviewer. It is implemented as the `/specify` Claude Code
   **skill** at `.claude/skills/specify/SKILL.md`; `interview/README.md` documents it.
 - `scripts/regenerate.py` — renders every `reference-cards/*.html` to a sibling PDF.
@@ -48,13 +55,12 @@ where context disambiguates.
   criterion).
 
 ## Decisions made
-- 2026-06: Renamed from a single-card folder to a multi-component toolkit
+*Append-only — newest entries at the bottom. Dates are `YYYY-MM-DD`.*
+
+- 2026-06-29: Renamed from a single-card folder to a multi-component toolkit
   (`agent-specification-toolkit`) to match the owner's `llm-wiki-toolkit` and make room for the
-  planned interviewer. Cards moved under `reference-cards/`; regenerate script now renders all
-  cards.
-- Planned next: build the Specification Interviewer (form factor undecided — see
-  `interview/README.md`).
-- 2026-06: Built the Specification Interviewer as the `/specify` Claude Code slash command
+  interviewer. Cards moved under `reference-cards/`; regenerate script now renders all cards.
+- 2026-06-29: Built the Specification Interviewer as the `/specify` Claude Code slash command
   (`.claude/commands/specify.md`). Chose a reasoning-driven command over a static form because the
   hard part is elicitation quality (pushing back on vague answers, handling the user's tangents).
   If it grows supporting files or branches, graduate it to a Claude Code skill (`SKILL.md`).
@@ -82,6 +88,6 @@ where context disambiguates.
     routing. The settings call, and its consequences, sit with the human, on the record.
   - **Living spec** — git-versioned; **amend mode** re-checks only the delta and logs to the
     changelog; **advance-phase** re-slices without re-interviewing.
-  - **Distribution** — project-local zero-footprint default (clone + run; delete to remove); an
-    opt-in, stdlib, cross-platform global installer with collision backups + manifest-based clean
-    uninstall lands in Phase 4. Repo is MIT-licensed and will be published publicly.
+  - **Distribution** — project-local zero-footprint default (clone + run; delete to remove); plus an
+    opt-in, stdlib, cross-platform global installer (`install.py` / `uninstall.py`) with collision
+    backups + manifest-based clean uninstall. Repo is MIT-licensed and will be published publicly.

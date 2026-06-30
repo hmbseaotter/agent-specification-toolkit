@@ -6,12 +6,38 @@ A specification here is a **contract** the agent reads, fails against, then writ
 pass. Requirements are written in **EARS** (Easy Approach to Requirements Syntax), where the
 load-bearing word `SHALL` turns a preference into something a test can verify.
 
+## Three roles, one workflow
+
+Three different "agents" are easy to confuse — keep them straight:
+
+- **Target agent** — the agent (or feature) you're *specifying*; the thing to be built.
+- **Building agent** — the AI coding tool that *reads the spec and writes the code*: e.g. Claude
+  Code, Cursor, Aider, GitHub Copilot/Workspace, Windsurf.
+- **The interviewer** — the `/specify` skill in this repo. It *produces the specification*; it does
+  **not** build anything itself.
+
+```mermaid
+flowchart LR
+  idea["Your idea for an<br/>agent or feature"] --> spec
+  subgraph this["This toolkit"]
+    spec["/specify<br/>interview"] --> out["spec + assumptions +<br/>build prompt (in specs/)"]
+  end
+  out --> review{"You review the<br/>assumptions, pick a phase"}
+  review --> build["Building agent<br/>(Claude Code / Cursor /<br/>Aider / Copilot / ...)"]
+  build --> target["Target agent<br/>(the production-grade product)"]
+  target -. "surprise, or next phase" .-> spec
+```
+
+In short: **you + the interviewer write the spec → you review it → a building agent implements the
+chosen phase → the target agent exists.** The spec stays the source of truth; you amend it or advance
+a phase as the build proceeds (see [`interview/README.md`](interview/README.md)).
+
 ## Components
 
 | Component | Status | What it is |
 |-----------|--------|------------|
 | **Reference cards** (`reference-cards/`) | ✅ ready | Printable US-Letter infographics — the at-a-glance method. |
-| **Specification template** (`templates/`) | ✅ ready | Copy-paste skeleton you fill in, one file per feature. |
+| **Specification template** (`templates/`) | ✅ ready | Copy-paste skeleton you fill in, one file per agent (or feature). |
 | **Specification interviewer** (`/specify`) | ✅ ready | A Claude Code **skill** that runs a guided interview — helping and forcing you to supply every input an agent needs — then writes a complete specification to `specs/`, derives a phased build plan you choose from, and emits a phase-scoped build prompt. See `interview/README.md`. |
 
 ## Layout
@@ -41,39 +67,47 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 > **Command note:** where commands say `python` / `pip`, that is the **Windows** form. On
 > **macOS / Linux**, use `python3` / `pip3` instead. Forward slashes in paths work on all three OSes.
 
-**Run the interviewer.** From the repo root, start Claude Code and invoke the skill (it ships
-with the repo, so cloning is enough):
+**Run the interviewer.** From the repo root, start Claude Code (the skill ships with the repo, so
+cloning is enough):
 
 ```
 claude
+```
+
+Then, at the Claude Code prompt, name what you're building:
+
+```
 /specify a background PR-triage agent
 ```
 
 It interviews you one question at a time, won't let required blocks stay empty, surfaces every
-assumption for your review, then helps you choose how far this first build goes — writing the
-specification to `specs/<slug>.md` alongside a build prompt scoped to that phase. Omit the target
-and it asks what you're specifying.
+assumption for your review, then helps you choose how far this first build goes. Omit the target and
+it asks what you're specifying.
+
+**Where your outputs land.** Everything is written into `specs/` in the repo: the specification
+(`specs/<slug>.md`, which embeds the reviewed assumptions list) and a phase-scoped **build prompt**
+(`specs/<slug>.build-prompt.md`) — the file you hand to a *building agent* (see *Three roles* above).
 
 **Print a card.** Open the PDF in `reference-cards/` and print at *Actual size / 100%* (not
 "fit to page"), paper **Letter**, margins **None**.
 
 **Write a specification by hand** (instead of the interviewer). Copy the template into your
-project and fill it in, one file per feature or agent:
+project and fill it in, one file per agent (or a feature):
 
 - **macOS / Linux:**
   ```bash
-  cp templates/specification-template.md /your-project/specs/your-feature.md
+  cp templates/specification-template.md /your-project/specs/your-agent-or-feature.md
   ```
 - **Windows (PowerShell):**
   ```powershell
-  Copy-Item templates\specification-template.md C:\your-project\specs\your-feature.md
+  Copy-Item templates\specification-template.md C:\your-project\specs\your-agent-or-feature.md
   ```
 
 **Check a specification.** Validate a filled-in spec's completeness — pure deterministic checks,
 no AI or tokens:
 
 ```
-python scripts/lint_spec.py specs/your-feature.md
+python scripts/lint_spec.py specs/your-agent-or-feature.md
 ```
 
 Fill every block top to bottom, then hand it to your agent using the prompt at the bottom of

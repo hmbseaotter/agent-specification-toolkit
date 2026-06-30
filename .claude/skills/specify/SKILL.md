@@ -203,6 +203,8 @@ is about the **built agent's** runtime models; do not conflate the two.
 ---
 
 ## STEP 7 — Emit the three outputs
+All three artifacts land in **`specs/`** so they are collectable and survive the session.
+
 1. **Spec file** → write to **`specs/<slugified-name>.md`** (create `specs/` if needed). This is
    the **whole production-grade target**: metadata, all blocks, `[P#]` tags, the
    `## implementation phases` block, the reviewed assumptions, and the changelog. If the user chose
@@ -210,8 +212,10 @@ is about the **built agent's** runtime models; do not conflate the two.
    unfinished blocks.
 2. **Assumptions list** — already reviewed at STEP 6a; it lives in the spec and you echo it back so
    the user has it in view.
-3. **Build prompt — scoped to the chosen phase.** Show it and tell the user it targets phase *X*.
-   It MUST:
+3. **Build prompt — scoped to the chosen phase.** **Write it to
+   `specs/<slugified-name>.build-prompt.md`** (and show it), telling the user it targets phase *X* and
+   is the file they hand to a **building agent** — the AI coding tool that implements it (e.g. a fresh
+   Claude Code session, Cursor, or Aider), distinct from the target agent being built. It MUST:
    - Name the **target phase** and its tagged items + acceptance criteria.
    - Say: **build only this phase. Higher-phase items are documented-but-not-yet — do not build
      them, and do not make architectural choices that block them.**
@@ -223,7 +227,8 @@ is about the **built agent's** runtime models; do not conflate the two.
      append any new calls to **decisions made**; and if the spec itself changes, add a changelog
      line and bump the version.
 
-Finish by telling the user the spec path and that **advancing to the next phase later is cheap** —
-no re-interview, just re-slice and emit the next build prompt.
+Finish by telling the user the two file paths (`specs/<slug>.md` and `specs/<slug>.build-prompt.md`)
+and that **advancing to the next phase later is cheap** — no re-interview, just re-slice and emit the
+next build prompt.
 
 Keep your tone conversational and concise. One question at a time during elicitation.
