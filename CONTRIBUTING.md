@@ -36,6 +36,11 @@ python -m playwright install chromium
 - **Cross-platform + minimal footprint:** keep the skill, linter, and installer
   **standard-library only** and working on Windows / macOS / Linux. The installer must never write
   outside `~/.claude/skills/specify/` or touch user settings or hooks.
+- **Type discipline (the toolkit's own code):** the deterministic Python (`scripts/lint_spec.py`,
+  `install.py` / `uninstall.py`, `scripts/regenerate.py`) uses type hints — keep new code
+  type-hinted, and, mirroring the determinism boundary the toolkit preaches, type-check it (e.g.
+  `mypy .`) before a PR. No type checker is bundled or required at runtime, to preserve the
+  stdlib-only footprint.
 - **Repo hygiene:** don't commit tool/editor/OS junk (it's gitignored for a reason); line endings
   are LF (see `.gitattributes`).
 
