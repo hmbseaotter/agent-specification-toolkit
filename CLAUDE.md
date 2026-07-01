@@ -118,3 +118,16 @@ where context disambiguates.
     hints + a checker; a float must not silently become an int) AND immutability for constants
     (`Final` / frozen); "type-check passes" becomes an acceptance criterion. The determinism boundary
     applies to skills too, not only agents. Language-aware; not a blanket SHALL.
+- 2026-07-01: Zero-distance emit — locations, record, and a commit reminder (chosen with the owner).
+  - Emit to TWO places: a **canonical copy** at `specs/<slug>.emitted/` (version-controlled safety
+    copy, co-located with the spec) AND a **live copy** at `.claude/skills/<name>/` (skill) or
+    `.claude/agents/<name>.md` (declarative agent) so it is immediately usable. Deleting the live copy
+    never loses work (the canonical copy stays); the spec remains the source of truth for re-emission.
+  - **`## emitted artifacts` record** — a new template output section logging WHAT was emitted and
+    WHERE (both paths) + date: an un-missable audit trail so a bad emit can be cleanly removed
+    (delete the live copy). `/specify` also echoes it to the user at emit time.
+  - **Commit-now milestone reminder** — `/specify` tells the user to commit the emitted files
+    immediately (git is the recovery path; forgetting to commit at the pristine moment is how a clean
+    state gets lost).
+  - README gained a **"dev-home vs use-site"** section: this repo is the tool's home, but `/specify`
+    is *used* in the target project (where its outputs land), enabled by the opt-in global install.

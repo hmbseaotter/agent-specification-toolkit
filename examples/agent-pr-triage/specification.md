@@ -131,5 +131,8 @@ a reviewer can pick it up without first reading the whole diff — measurably cu
 - [ ] Webhook infra (endpoint + secret) is available — risk if wrong: no triggers fire.
 - [ ] A small model is adequate for summaries — risk if wrong: low-quality comments.
 
+## emitted artifacts
+n/a (build-required — the interviewer emits a build prompt, not a live artifact; see `build-prompt.md`).
+
 ## changelog
 - 0.1.0 (2026-07-01): initial example, produced by `/specify` (build-required agent).

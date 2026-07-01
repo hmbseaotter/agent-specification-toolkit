@@ -261,17 +261,33 @@ All artifacts land in **`specs/`** so they are collectable and survive the sessi
 
    **Zero-distance target (skill / declarative agent) — the artifact itself.** There is no build
    hand-off: building is deterministic, so PER THE TOOLKIT'S OWN DETERMINISM PRINCIPLE, YOU emit the
-   artifact. Write a proper **`SKILL.md`** (inside a `skills/<name>/` dir) or an **`AGENT.md`** — with
-   correct frontmatter (name; description / when-to-use; and for an agent its tools + model) —
-   populated from the spec: role → the "you are…" line; EARS steps → the procedure; determinism
-   boundary → which steps call a script vs use judgment; acceptance criteria → the quality bar. If the
-   spec needs a **custom deterministic tool**, also emit that as a companion script beside the artifact
-   (the `SKILL.md` + `lint_spec.py` pattern). Tell the user the artifact path; the spec in
-   `specs/<slug>.md` remains its source of truth (amend there, re-emit).
+   artifact. Build it from the spec: a proper **`SKILL.md`** (frontmatter: name + description /
+   when-to-use) or an **`AGENT.md`** (name, description, tools, model), populated from the spec —
+   role → the "you are…" line; EARS steps → the procedure; determinism boundary → which steps call a
+   script vs use judgment; acceptance criteria → the quality bar. If the spec needs a **custom
+   deterministic tool**, also produce it as a companion script (the `SKILL.md` + `lint_spec.py`
+   pattern). Then write it to TWO places, record it, and remind:
+   1. **Canonical copy (durable, version-controlled)** → `specs/<slug>.emitted/` beside the spec —
+      e.g. `specs/<slug>.emitted/SKILL.md` (+ any companion script). This is the safety copy: it lives
+      with the spec in git, so deleting the live copy never loses the work.
+   2. **Live copy (immediately usable)** → the target project's harness location:
+      `.claude/skills/<name>/SKILL.md` (+ companion beside it) for a skill, or
+      `.claude/agents/<name>.md` for a declarative agent. This is what makes it work in the project
+      right away.
+   3. **Record it in the spec** — add/update an **`## emitted artifacts`** section in
+      `specs/<slug>.md` listing, un-missably: WHAT was emitted, WHERE each file went (BOTH the
+      canonical and the live paths), and the date. Echo the same list in your final message so the
+      user can audit — or cleanly remove a bad emit (delete the live copy; the canonical copy stays).
+   4. **Commit-now reminder (milestone).** Tell the user to COMMIT these new files now, before editing
+      anything, so the pristine emitted state is versioned — git is the recovery path, and forgetting
+      to commit at this milestone is how a clean state gets lost.
+
+   The spec in `specs/<slug>.md` remains the source of truth — amend it and re-emit to regenerate.
 
 Finish by telling the user the file paths — `specs/<slug>.md` plus either
-`specs/<slug>.build-prompt.md` (build-required) or the emitted artifact path (zero-distance). For
-build-required targets, note that **advancing to the next phase later is cheap** — no re-interview,
-just re-slice and emit the next build prompt.
+`specs/<slug>.build-prompt.md` (build-required) or the emitted artifact paths, canonical + live
+(zero-distance) — and **remind them to commit at this milestone** (versioning the pristine state).
+For build-required targets, note that **advancing to the next phase later is cheap** — no
+re-interview, just re-slice and emit the next build prompt.
 
 Keep your tone conversational and concise. One question at a time during elicitation.

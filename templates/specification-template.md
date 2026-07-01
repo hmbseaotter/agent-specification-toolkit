@@ -215,6 +215,16 @@ turn confirmed ones into "prior decisions" and fix the wrong ones in place. -->
 
 ---
 
+## emitted artifacts   <!-- OUTPUT (zero-distance targets): where the interviewer wrote the artifact -->
+<!-- For a skill / declarative agent, the interviewer emits the artifact and records it here:
+WHAT was emitted, and WHERE each file went — the canonical copy (specs/<slug>.emitted/) AND the live
+copy (.claude/skills/<name>/ or .claude/agents/<name>.md) — with a date, so a bad emit can be audited
+and cleanly removed (delete the live copy; the canonical copy stays). Commit these at the emit
+milestone. Write "n/a (build-required — see build prompt)" for a build-required target. -->
+- [interviewer fills in on emit]
+
+---
+
 ## changelog   <!-- spec evolution — newest first; bump "Spec version" in metadata to match -->
 - 0.1.0 ([YYYY-MM-DD]): initial draft.
 

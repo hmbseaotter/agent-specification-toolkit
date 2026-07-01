@@ -112,5 +112,12 @@ n/a — zero-distance target (a skill); the artifact is emitted directly, no pha
 - [ ] "~10s for 100k rows" is acceptable performance — risk if wrong: needs streaming/optimisation.
 - [ ] A small model tier is fine for column interpretation — risk if wrong: low-quality notes.
 
+## emitted artifacts
+- Canonical copy: `emitted/SKILL.md` + `emitted/csv_profile.py` (the interviewer's output, kept with
+  this spec in git — the durable safety copy).
+- Live copy: not deployed here — this example is illustrative, so it is deliberately NOT placed under
+  `.claude/skills/`. In a real project `/specify` would also write a live copy to
+  `.claude/skills/csv-column-summarise/` and remind you to commit at that milestone.
+
 ## changelog
 - 0.1.0 (2026-07-01): initial example, produced by `/specify` (zero-distance skill).

@@ -122,6 +122,35 @@ python scripts/lint_spec.py specs/your-agent-or-feature.md
 Fill every block top to bottom, then hand it to your agent using the prompt at the bottom of
 the template (it lives in an HTML comment).
 
+## Where to run `/specify` — dev-home vs use-site
+
+This repo is the tool's **home** — where `/specify` is developed and shipped from. But the tool's
+*job* is to spec things you build **elsewhere**, so for real work you run it **in the project where
+the target belongs**, not in this repo. (Running it here is only for developing the tool, or a demo.)
+
+- **Project-local (default):** run `claude` inside a clone of this repo — `/specify` is available
+  there, zero global footprint, and outputs land in *this* clone's `specs/`. Good for trying it out.
+- **Global (opt-in, `install.py`):** installs the skill into `~/.claude/skills/specify/` so `/specify`
+  works in **every** project. Then you `cd` into your real project (say `AAA`), run `claude`, and use
+  `/specify` there. The toolkit repo isn't needed at runtime — the install copied everything the
+  skill needs. (If both a global and a project-local copy exist, running inside a project that has its
+  own copy uses that one — most specific wins.)
+
+**Where the outputs land: in the project you run it from — not this repo.** `/specify` writes under
+`specs/` relative to your current project. So in `AAA` you get `AAA/specs/<slug>.md`, plus — by build
+class:
+
+- **build-required** (coded feature / agent): `AAA/specs/<slug>.build-prompt.md`. You hand that to a
+  building agent working *in AAA*, and the code is built in AAA.
+- **zero-distance** (skill / declarative agent): the artifact is emitted directly *in AAA* — a
+  **canonical** copy at `AAA/specs/<slug>.emitted/` (version-controlled safety copy) **and** a **live**
+  copy at `AAA/.claude/skills/<name>/` (or `.claude/agents/<name>.md`) so it works immediately. Both
+  are recorded in the spec's `## emitted artifacts` section, and `/specify` reminds you to commit at
+  that milestone.
+
+The point of the global install is exactly this: spec, build prompt (or artifact), and the eventual
+code all live **together in the target project** — no copying specs out of this repo.
+
 ## Get it on another machine (safe, contained, removable)
 
 This repo drops onto any machine — yours or someone else's — **without touching anything global**.
