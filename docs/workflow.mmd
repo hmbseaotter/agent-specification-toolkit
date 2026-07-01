@@ -1,0 +1,9 @@
+flowchart LR
+  idea["Your idea for an<br/>agent or feature"] --> spec
+  subgraph this["This toolkit"]
+    spec["/specify<br/>interview"] --> out["spec + assumptions +<br/>build prompt (in specs/)"]
+  end
+  out --> review{"You review the<br/>assumptions, pick a phase"}
+  review --> build["Building agent<br/>(Claude Code / Cursor /<br/>Aider / Copilot / ...)"]
+  build --> target["Target agent<br/>(the production-grade product)"]
+  target -. "surprise, or next phase" .-> spec

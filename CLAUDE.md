@@ -23,6 +23,9 @@ Keep these straight throughout the docs:
   build-required **agent** (`agent-pr-triage/`: spec + plan-gated build prompt). The emitted
   `SKILL.md` is illustrative — it lives under `examples/`, not `.claude/skills/`, so it is not
   registered as a live skill. Both specs pass `scripts/lint_spec.py`.
+- `docs/workflow.mmd` / `docs/workflow.png` — the README workflow diagram's Mermaid source and its
+  rendered PNG fallback (shown in a collapsed `<details>` for non-GitHub viewers). `.png` is a
+  generated artifact; regenerate it from the `.mmd`, never hand-edit it.
 - `scripts/regenerate.py` — renders every `reference-cards/*.html` to a sibling PDF.
 - `scripts/lint_spec.py` — deterministic, stdlib-only completeness linter for a spec file
   (required blocks present, EARS/SHALL, no "should" in requirements, criteria present, phase
@@ -131,3 +134,15 @@ where context disambiguates.
     state gets lost).
   - README gained a **"dev-home vs use-site"** section: this repo is the tool's home, but `/specify`
     is *used* in the target project (where its outputs land), enabled by the opt-in global install.
+- 2026-07-01: README front-matter for scanners (from resume-review feedback). Added, above the first
+  section: three static **shields.io badges** (MIT / Python 3.8+ / Works with Claude Code — static so
+  they render while the repo is still private), a bold **TL;DR** + component list, and a real **EARS
+  requirements excerpt** (lifted verbatim from `examples/skill-csv-column-summariser/`) so a GitHub
+  visitor sees what a spec produces immediately.
+- 2026-07-01: Mermaid static fallback → new **`docs/`** folder. The workflow diagram's source lives at
+  `docs/workflow.mmd`; a rendered `docs/workflow.png` sits in the README inside a collapsed
+  `<details>` right after the ```mermaid``` block — GitHub shows the interactive diagram (details
+  collapsed, no duplication), non-GitHub viewers get the PNG. Regenerate with
+  `npx @mermaid-js/mermaid-cli -i docs/workflow.mmd -o docs/workflow.png -b white -s 2` (an HTML
+  comment above the mermaid block records this). Rendered locally via the Playwright-cached Chromium
+  (a puppeteer `executablePath` config) so no separate Chromium download is needed.

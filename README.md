@@ -1,10 +1,37 @@
 # Agent Specification Toolkit
 
-Tools for writing software specifications that an AI coding agent can actually execute.
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](install.py)
+[![Works with Claude Code](https://img.shields.io/badge/Works%20with-Claude%20Code-6C4CF1.svg)](https://claude.com/claude-code)
 
-A specification here is a **contract** the agent reads, fails against, then writes code to
-pass. Requirements are written in **EARS** (Easy Approach to Requirements Syntax), where the
-load-bearing word `SHALL` turns a preference into something a test can verify.
+**Write specifications that AI coding agents can actually execute.** The toolkit uses **EARS**
+(Easy Approach to Requirements Syntax) to turn vague preferences into verifiable contracts — the
+load-bearing word `SHALL` makes a requirement something a test can check. It ships a guided
+interviewer (`/specify`), a deterministic completeness linter, and printable reference cards.
+
+A specification here is a **contract** the agent reads, fails against, then writes code to pass.
+Here is what a requirements block looks like — real EARS, grouped by trigger:
+
+```text
+## requirements
+### ubiquitous (always active)
+- The system SHALL, for each column, report inferred type, fill rate, and distinct-value count.
+
+### event-driven (WHEN — triggered by an action)
+- WHEN the user supplies a valid CSV path, the system SHALL run the companion script and print a
+  per-column Markdown table.
+
+### unwanted behavior (IF — error handling)
+- IF the path is missing or not a readable CSV, the system SHALL report the error and stop, with no
+  partial output.
+
+### optional feature (WHERE — behind a flag)
+- WHERE the user requests it, the system SHALL add a one-line plain-English interpretation per column.
+```
+
+Every `SHALL` maps to a machine-checkable acceptance criterion, and `scripts/lint_spec.py` enforces
+that the blocks are all present. The full worked example is in
+[`examples/skill-csv-column-summariser/`](examples/skill-csv-column-summariser/specification.md).
 
 ## Three roles, one workflow
 
@@ -27,6 +54,15 @@ flowchart LR
   build --> target["Target agent<br/>(the production-grade product)"]
   target -. "surprise, or next phase" .-> spec
 ```
+
+<!-- Regenerate docs/workflow.png after editing the diagram above / docs/workflow.mmd:
+     npx @mermaid-js/mermaid-cli -i docs/workflow.mmd -o docs/workflow.png -b white -s 2 -->
+<details>
+<summary>Same diagram as a static image (for viewers where Mermaid does not render)</summary>
+
+![The /specify workflow: your idea feeds the /specify interview, which emits a spec + assumptions + build prompt; you review the assumptions and pick a phase; a building agent (Claude Code / Cursor / Aider / Copilot) produces the target agent; surprises or the next phase loop back into the spec.](docs/workflow.png)
+
+</details>
 
 In short: **you + the interviewer write the spec → you review it → a building agent implements the
 chosen phase → the target agent exists.** The spec stays the source of truth; you amend it or advance
@@ -59,6 +95,9 @@ the `SKILL.md` / `AGENT.md` artifact directly, because "building" it is determin
 ├── examples/
 │   ├── skill-csv-column-summariser/            # zero-distance example: spec + emitted SKILL.md
 │   └── agent-pr-triage/                        # build-required example: spec + build prompt
+├── docs/
+│   ├── workflow.mmd                            # Mermaid source for the workflow diagram
+│   └── workflow.png                            # static PNG fallback (regenerate from the .mmd)
 ├── scripts/
 │   ├── regenerate.py                           # re-render every card's PDF from its HTML
 │   └── lint_spec.py                            # deterministic spec completeness linter (stdlib)
