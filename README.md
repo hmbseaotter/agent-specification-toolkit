@@ -29,6 +29,11 @@ Here is what a requirements block looks like — real EARS, grouped by trigger:
 - WHERE the user requests it, the system SHALL add a one-line plain-English interpretation per column.
 ```
 
+This block uses four of EARS' five patterns; the fifth — `WHILE` (state-driven) — is absent because
+this run-once tool has no ongoing state to hold behaviour, and inventing a requirement just to show
+the keyword would break the toolkit's own rule that every requirement be real. All five patterns are
+catalogued on the [reference card](reference-cards/).
+
 Every `SHALL` maps to a machine-checkable acceptance criterion, and `scripts/lint_spec.py` enforces
 that the blocks are all present. The full worked example is in
 [`examples/skill-csv-column-summariser/`](examples/skill-csv-column-summariser/specification.md).
