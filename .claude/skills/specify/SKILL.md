@@ -49,6 +49,22 @@ If the mode is ambiguous, ask which one. Default to **New spec**.
 
 ---
 
+## Then: classify the target by build distance (deterministic — no model judgment)
+The target's **build class** decides how much of the flow applies and what the final output is:
+- **Zero-distance** — a **skill** or a **declarative agent** (harness-run markdown, e.g. a Claude
+  Code subagent). "Building" is deterministic reformatting, so THIS SKILL EMITS THE ARTIFACT ITSELF
+  (a `SKILL.md` skill dir, or an `AGENT.md`) — there is no separate building agent. Skip the
+  agent-runtime dimensions that don't apply (state & memory, model routing, iteration/budget STOP),
+  phasing (STEP 6b), and build-readiness (STEP 6c). Keep FULL rigor on role, outcome, scope, the EARS
+  steps, the determinism boundary, acceptance criteria, and tools/permissions if it acts.
+- **Build-required** — a **coded feature** or **coded agent**. Building is real engineering, so run
+  the full flow and hand off a **build prompt** to a building agent (STEP 7), including the plan-gate.
+
+Record the target type + build class in the spec's metadata. If unsure, ask. This is the
+spec-to-artifact **distance** axis: distance ~= 0 -> emit the artifact; distance large -> build prompt.
+
+---
+
 ## How to run the interview
 - **One question at a time.** Ask, wait, listen. Never dump a list of questions in one message.
 - **The user thinks out loud and asks questions back — expect it, welcome it.** Engage their
@@ -104,6 +120,12 @@ When the target is an **agent**, additionally hold the line on the agent dimensi
   anything deterministic: math, comparisons, parsing, validation, sorting, lookups, dedupe,
   threshold checks belong in **plain code (zero tokens)**. The LLM is reserved for genuine
   judgment, at a named model tier. This is the core cost discipline — do not let it stay vague.
+  (This block applies to skills too, not only agents — a skill has deterministic steps as well.)
+- **Type & value discipline on that deterministic code.** Require (a) static typing — type hints + a
+  static checker (mypy/pyright; native in Java/Go/Rust) so a variable's type can't drift (a float
+  silently becoming an int breaks fractional math); and (b) immutability — `typing.Final` / frozen
+  dataclasses / tuples so constants stay constant. Make "type-check passes" an acceptance criterion.
+  (N/A for a pure-prose skill with no code.)
 - **Failure & escalation MUST say what happens when the agent is stuck** and how it reaches a
   human.
 
@@ -111,7 +133,9 @@ When the target is an **agent**, additionally hold the line on the agent dimensi
 
 ## STEP 1–4 — Elicit the blocks
 Work the blocks defined in `templates/specification-template.md`. In order:
-1. **metadata** — name, version (start 0.1.0), status DRAFT, date, author, target type.
+1. **metadata** — name, version (start 0.1.0), status DRAFT, date, author, target type, **build
+   class** (zero-distance | build-required), and **role** (the persona the target adopts — e.g.
+   "an expert reconciliation reviewer"; first-class for a skill/agent, "n/a" for a plain library).
 2. **outcome** — what can a user DO that they couldn't before? Measurable.
 3. **in scope** / **out of scope (v1)** — concretes in, explicit exclusions out (with reasons).
 4. **Agent dimensions** (when the target is an agent; "n/a (not an agent)" for a plain feature):
@@ -157,6 +181,9 @@ user to walk it**, confirming or correcting each:
 ---
 
 ## STEP 6b — Phase composition (the compose-your-phase menu)
+*(Build-required targets only. A zero-distance target — skill / declarative agent — has no phased
+build: skip STEP 6b and 6c and go to STEP 7, which emits the artifact.)*
+
 Derive a phased build plan **from the spec**, sized to the target's complexity (a small target may
 need only P1 + P2; do not force a long checklist). Phasing **slices** the spec into a build order —
 it never shrinks the production-grade target.
@@ -202,8 +229,8 @@ is about the **built agent's** runtime models; do not conflate the two.
 
 ---
 
-## STEP 7 — Emit the three outputs
-All three artifacts land in **`specs/`** so they are collectable and survive the session.
+## STEP 7 — Emit the outputs
+All artifacts land in **`specs/`** so they are collectable and survive the session.
 
 1. **Spec file** → write to **`specs/<slugified-name>.md`** (create `specs/` if needed). This is
    the **whole production-grade target**: metadata, all blocks, `[P#]` tags, the
@@ -212,23 +239,39 @@ All three artifacts land in **`specs/`** so they are collectable and survive the
    unfinished blocks.
 2. **Assumptions list** — already reviewed at STEP 6a; it lives in the spec and you echo it back so
    the user has it in view.
-3. **Build prompt — scoped to the chosen phase.** **Write it to
-   `specs/<slugified-name>.build-prompt.md`** (and show it), telling the user it targets phase *X* and
-   is the file they hand to a **building agent** — the AI coding tool that implements it (e.g. a fresh
-   Claude Code session, Cursor, or Aider), distinct from the target agent being built. It MUST:
+3. **Output #3 depends on the build class** (see "classify the target by build distance"):
+
+   **Build-required target (coded feature / coded agent) — a build prompt, scoped to the chosen
+   phase.** **Write it to `specs/<slugified-name>.build-prompt.md`** (and show it), telling the user
+   it targets phase *X* and is the file they hand to a **building agent** — the AI coding tool that
+   implements it (e.g. a fresh Claude Code session, Cursor, or Aider), distinct from the target being
+   built. It MUST:
    - Name the **target phase** and its tagged items + acceptance criteria.
    - Say: **build only this phase. Higher-phase items are documented-but-not-yet — do not build
      them, and do not make architectural choices that block them.**
+   - **Plan gate:** instruct the building agent to ENTER PLAN MODE (or its tool's equivalent),
+     present an implementation plan, and get human approval BEFORE writing code.
    - Enforce the **determinism boundary** (deterministic work in plain code; LLM only for the named
-     judgment tasks at the named tier) and every **never-do-unattended bright line** (human
-     checkpoints).
+     judgment tasks at the named tier), the **type & value discipline** on that code (static typing +
+     immutability for constants), and every **never-do-unattended bright line** (human checkpoints).
    - State the **recommended build-time model/effort** from STEP 6c.
    - Require verifying each acceptance criterion **by running it**; don't mark done until all pass;
      append any new calls to **decisions made**; and if the spec itself changes, add a changelog
      line and bump the version.
 
-Finish by telling the user the two file paths (`specs/<slug>.md` and `specs/<slug>.build-prompt.md`)
-and that **advancing to the next phase later is cheap** — no re-interview, just re-slice and emit the
-next build prompt.
+   **Zero-distance target (skill / declarative agent) — the artifact itself.** There is no build
+   hand-off: building is deterministic, so PER THE TOOLKIT'S OWN DETERMINISM PRINCIPLE, YOU emit the
+   artifact. Write a proper **`SKILL.md`** (inside a `skills/<name>/` dir) or an **`AGENT.md`** — with
+   correct frontmatter (name; description / when-to-use; and for an agent its tools + model) —
+   populated from the spec: role → the "you are…" line; EARS steps → the procedure; determinism
+   boundary → which steps call a script vs use judgment; acceptance criteria → the quality bar. If the
+   spec needs a **custom deterministic tool**, also emit that as a companion script beside the artifact
+   (the `SKILL.md` + `lint_spec.py` pattern). Tell the user the artifact path; the spec in
+   `specs/<slug>.md` remains its source of truth (amend there, re-emit).
+
+Finish by telling the user the file paths — `specs/<slug>.md` plus either
+`specs/<slug>.build-prompt.md` (build-required) or the emitted artifact path (zero-distance). For
+build-required targets, note that **advancing to the next phase later is cheap** — no re-interview,
+just re-slice and emit the next build prompt.
 
 Keep your tone conversational and concise. One question at a time during elicitation.

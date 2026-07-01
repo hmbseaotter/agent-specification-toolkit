@@ -91,3 +91,25 @@ where context disambiguates.
   - **Distribution** — project-local zero-footprint default (clone + run; delete to remove); plus an
     opt-in, stdlib, cross-platform global installer (`install.py` / `uninstall.py`) with collision
     backups + manifest-based clean uninstall. Repo is MIT-licensed and will be published publicly.
+- 2026-07-01: Adopted the **spec-to-artifact distance** axis as the toolkit's organizing model
+  (thesis consciously widened: "specifications for any executable unit — code OR procedure").
+  - **Distance / build class** — the real axis is build determinism, not "skill vs agent".
+    ZERO-DISTANCE targets (a skill; a declarative agent = harness-run markdown, e.g. a Claude Code
+    subagent) have a deterministic "build" (reformatting), so the interviewer **emits the artifact
+    itself** (`SKILL.md` / `AGENT.md`) — per the toolkit's own determinism principle. BUILD-REQUIRED
+    targets (coded feature/agent) still get a **build prompt** for a building agent. Number of files
+    also follows the determinism boundary: pure-judgment → one `.md`; custom deterministic steps →
+    `.md` + companion script (this repo: `SKILL.md` + `lint_spec.py`).
+  - **Conditional output #3** — STEP 7 emits either the artifact (zero-distance) or the build prompt
+    (build-required). Anti-Swiss-knife guardrail: the core stays a tool-agnostic *specifier*; the only
+    tool-specific part (writing `SKILL.md`/`AGENT.md`) is a thin, fenced emission step — no new
+    companion scripts, no installer changes.
+  - **Plan-gate in the build prompt** — build-required build prompts instruct the building agent to
+    enter plan mode → present a plan → get human approval → build. A second human checkpoint whose
+    value scales with distance (zero-distance targets skip it).
+  - **Role field** — the persona the target adopts, added to metadata (and the building agent's role
+    framing in the build prompt).
+  - **Type & value discipline** — the determinism boundary now asks for BOTH static typing (type
+    hints + a checker; a float must not silently become an int) AND immutability for constants
+    (`Final` / frozen); "type-check passes" becomes an acceptance criterion. The determinism boundary
+    applies to skills too, not only agents. Language-aware; not a blanket SHALL.

@@ -2,17 +2,21 @@
 
 <!--
 HOW TO USE
-1. One spec = one feature or one agent. Save as /specs/[slug].md.
+1. One spec = one feature, one agent, or one skill. Save as /specs/[slug].md.
 2. Fill every block top to bottom. Delete the guidance comments as you go.
 3. Blocks marked <!-- AGENT --> apply when the target is an autonomous / background /
-   interactive agent. If you are specifying a plain feature, write "n/a (not an agent)" in
-   those blocks and move on — don't delete them, so the structure stays checkable.
+   interactive agent. For a plain feature or a skill, write "n/a (not an agent)" in the blocks
+   that don't apply and move on — don't delete them, so the structure stays checkable.
 4. The "assumptions" block near the bottom is a REVIEW GATE: every assumption made during
    writing is listed there to be confirmed or corrected BEFORE any build starts.
 5. Hand off with the prompt at the very bottom of this file.
 6. Phase tags: tag each in-scope item, requirement, and acceptance criterion with the
    implementation phase it belongs to — [P1], [P2], … (see "implementation phases" below).
    The build prompt is scoped to ONE phase; the spec itself always stays the whole target.
+7. Build class (see metadata). A ZERO-DISTANCE target (a skill or a declarative agent) has no
+   separate build step — "building" is deterministic reformatting, so the interviewer emits the
+   artifact (SKILL.md / AGENT.md) directly, and the agent-runtime blocks and phasing are usually
+   "n/a". A BUILD-REQUIRED target (coded feature/agent) hands the build prompt to a building agent.
 
 Keyword convention (RFC 2119 / 8174): SHALL = MUST = absolute, verifiable requirement.
 We use SHALL for every requirement on purpose. If a line is only a "should," it is not a
@@ -24,7 +28,9 @@ requirement — cut it, or move it to "prior decisions."
 - Status: DRAFT                <!-- DRAFT | READY-FOR-BUILD | IN-BUILD | BUILT -->
 - Last updated: [YYYY-MM-DD]
 - Author(s): [who]
-- Target type: [feature | background agent (CLI-controlled) | interactive/GUI agent | library/service]
+- Target type: [skill | declarative agent (harness-run markdown, e.g. a Claude Code subagent) | feature | coded agent (CLI/background/GUI) | library/service]
+- Build class: [zero-distance | build-required]   <!-- zero-distance: the "build" is deterministic reformatting, so the artifact (SKILL.md / AGENT.md) is EMITTED directly by the interviewer — skills & declarative agents. build-required: building is real engineering, so a build prompt is handed to a building agent — coded features & agents. This is the spec-to-artifact distance axis. -->
+- Role: [the persona/role the target adopts, e.g. "an expert reconciliation reviewer"; first-class for a skill/agent, "n/a" for a plain library]
 
 ## outcome
 <!-- One paragraph. What can a user DO that they couldn't before? Make it measurable. -->
@@ -82,6 +88,11 @@ version it can imagine. Name what you are deliberately NOT doing, and why. -->
      block is where runaway cost is designed out before a single line is written. -->
 - Deterministic (plain code, NO LLM): [the concrete ops for THIS target — math, comparisons,
   parsing, validation, sorting, lookups, dedupe, formatting, threshold checks, file I/O]
+- Type & value discipline (for the deterministic code): (a) STATIC TYPING — type-hint it and gate on
+  a static checker (mypy / pyright for Python; native in Java/Go/Rust) so a variable's type can't
+  drift, e.g. a float slot silently receiving an int and breaking fractional math; (b) IMMUTABILITY
+  — keep constants constant and prevent accidental reassignment (typing.Final, frozen dataclasses,
+  tuples over lists). Make "type-check passes" an acceptance criterion. (N/A for a pure-prose skill.)
 - Requires judgment (LLM): [ambiguous NL understanding, synthesis, fuzzy classification,
   prioritization that needs taste — list the actual ones]
 - Model tier per judgment task: [task → model + why, e.g. "triage label → Haiku (cheap, high
@@ -217,15 +228,21 @@ Work in this order:
 2. Review the "assumptions" list. Flag any assumption that looks wrong or risky and confirm it
    with me BEFORE building — this is the highest-leverage step.
 3. List any remaining ambiguities or missing information.
-4. Build ONLY the phase targeted by the accompanying build prompt (the items tagged for it).
+4. PLAN GATE (build-required targets): enter plan mode (or your tool's equivalent), present an
+   implementation plan for this phase, and get human approval BEFORE writing code. (A zero-distance
+   target — a skill or declarative agent — has no separate build step: its artifact was emitted
+   directly by the interviewer, so this hand-off prompt does not apply to it.)
+5. Build ONLY the phase targeted by the accompanying build prompt (the items tagged for it).
    Treat higher-phase items as documented-but-not-yet: do not build them, but do not make
    architectural choices that block them. Within the target phase, write the implementation
    against the requirements section. Honour the "model & cost routing + determinism boundary"
    block: implement everything listed as deterministic in plain code (no LLM calls); reserve
-   model calls for the judgment tasks named, at the model tier specified.
-5. Respect every "NEVER do unattended" bright line — pause for a human checkpoint there.
-6. After implementation, verify each acceptance criterion one by one — by RUNNING it.
-7. Do not mark the task complete until all acceptance criteria pass.
+   model calls for the judgment tasks named, at the model tier specified. Where that code exists,
+   apply the block's type & value discipline (type hints + a static checker, plus immutability
+   for constants).
+6. Respect every "NEVER do unattended" bright line — pause for a human checkpoint there.
+7. After implementation, verify each acceptance criterion one by one — by RUNNING it.
+8. Do not mark the task complete until all acceptance criteria pass.
 
 Do not add features outside "in scope".
 Do not use packages outside "constraints" without flagging first.
