@@ -15,6 +15,8 @@ Safe by design:
 
 Usage:
     python install.py [--dry-run]
+    python install.py --check      # report if the global install is stale (read-only, no changes)
+    python install.py --update     # refresh an existing install in place, no backup (auto-refresh)
 
 Cross-platform (Windows / macOS / Linux), Python 3.8+, standard library only.
 """
@@ -49,9 +51,83 @@ def target_dir() -> Path:
     return Path.home() / ".claude" / "skills" / SKILL_NAME
 
 
+def _lines(p: Path) -> list[str]:
+    """Text content as lines, ignoring line-ending style (CRLF vs LF) so it never
+    reports a spurious difference from normalization alone."""
+    return p.read_text(encoding="utf-8").splitlines()
+
+
+def check_install(srcs: dict) -> int:
+    """Read-only: is the global install present AND matching this repo?
+
+    Deterministic file comparison (the toolkit's own principle: a check code can do).
+    Exit 0 = up to date; 1 = not installed, or stale (a file is missing or differs).
+    """
+    tgt = target_dir()
+    if not tgt.exists():
+        print(f"not installed: no global /specify at {tgt}")
+        print("  -> run 'python install.py' to install.")
+        return 1
+    stale = []
+    for name, sp in srcs.items():
+        tp = tgt / name
+        if not tp.is_file():
+            stale.append(f"{name}: MISSING from the install")
+        elif _lines(sp) != _lines(tp):
+            stale.append(f"{name}: DIFFERS from this repo")
+    if stale:
+        print(f"STALE: the global install at {tgt} does not match this repo:")
+        for s in stale:
+            print(f"  - {s}")
+        print("  -> re-run 'python install.py' to refresh.")
+        return 1
+    print(f"up to date: global /specify at {tgt} matches this repo.")
+    return 0
+
+
+def update_install(srcs: dict, tgt: Path) -> int:
+    """Refresh an existing toolkit install IN PLACE, no backup. Refuses to touch a target that
+    exists but is not a toolkit install (so it never clobbers a foreign skill of the same name)."""
+    if tgt.exists():
+        mf = tgt / MANIFEST_NAME
+        ours = False
+        if mf.is_file():
+            try:
+                ours = (json.loads(mf.read_text(encoding="utf-8")).get("tool")
+                        == "agent-specification-toolkit/specify")
+            except (ValueError, OSError):
+                ours = False
+        if not ours:
+            print(f"refuse: {tgt} exists but is not a toolkit install; "
+                  f"run 'python install.py' (which backs it up) instead.", file=sys.stderr)
+            return 2
+    tgt.mkdir(parents=True, exist_ok=True)
+    installed = []
+    for name, p in srcs.items():
+        shutil.copy2(str(p), str(tgt / name))
+        installed.append(name)
+    manifest = {
+        "tool": "agent-specification-toolkit/specify",
+        "installed_at": dt.datetime.now().isoformat(timespec="seconds"),
+        "target_dir": str(tgt),
+        "files": installed + [MANIFEST_NAME],
+        "backup_dir": None,
+        "updated_in_place": True,
+    }
+    (tgt / MANIFEST_NAME).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    print(f"Updated /specify in place at {tgt} (no backup).")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Opt-in global installer for the /specify skill.")
     ap.add_argument("--dry-run", action="store_true", help="show what would happen, change nothing")
+    ap.add_argument("--check", action="store_true",
+                    help="report whether the global install matches this repo; change nothing "
+                         "(exit 0 = up to date, 1 = stale / not installed)")
+    ap.add_argument("--update", action="store_true",
+                    help="refresh an existing toolkit install IN PLACE, no backup (for auto-refresh "
+                         "hooks); refuses if the target isn't a toolkit install")
     args = ap.parse_args(argv)
 
     root = repo_root()
@@ -63,7 +139,14 @@ def main(argv=None) -> int:
               file=sys.stderr)
         return 2
 
+    if args.check:
+        return check_install(srcs)
+
     tgt = target_dir()
+
+    if args.update:
+        return update_install(srcs, tgt)
+
     backup = None
     if tgt.exists():
         ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
