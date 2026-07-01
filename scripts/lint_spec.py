@@ -7,9 +7,9 @@ discipline: spend tokens on judgment, not on checks plain code can do. The /spec
 runs this instead of reasoning through the checks itself.
 
 What it can verify deterministically (and what it cannot):
-  - Structural: required blocks present, requirements exist, acceptance criteria exist,
-    out-of-scope non-empty, no "should" in the requirements block, phase tags well-formed,
-    leftover template placeholders / TODOs.
+  - Structural: required blocks present, a Role field in metadata, requirements exist, acceptance
+    criteria exist, out-of-scope non-empty, no "should" in the requirements block, phase tags
+    well-formed (relaxed for zero-distance targets), leftover template placeholders / TODOs.
   - It CANNOT verify *semantic* traceability (does THIS requirement have a matching check?)
     without requirement IDs - that stays a human/LLM judgment. It reports a count proxy only.
 
@@ -127,6 +127,23 @@ def lint(text: str) -> Report:
     clean = strip_comments(text)
     sections = parse_sections(clean)
 
+    # 0. Build class (zero-distance | build-required) - drives the target-aware relaxations below.
+    meta_body = find_block(sections, "metadata") or ""
+    bc_match = re.search(r"build class:\s*(.+)", meta_body, re.IGNORECASE)
+    build_class = None
+    if bc_match:
+        val = bc_match.group(1).lower()
+        has_zero, has_build = "zero-distance" in val, "build-required" in val
+        if has_zero and not has_build:
+            build_class = "zero-distance"
+        elif has_build and not has_zero:
+            build_class = "build-required"
+    if build_class:
+        r.ok(f"build class: {build_class}")
+    elif bc_match:
+        r.warn('metadata "Build class" still looks like a placeholder '
+               "(set zero-distance | build-required)")
+
     # 1. Required blocks present.
     missing = [b for b in REQUIRED_BLOCKS if find_block(sections, b) is None]
     if missing:
@@ -140,6 +157,14 @@ def lint(text: str) -> Report:
               f'(keep them; write "n/a (not an agent)" for a plain feature)')
     else:
         r.ok("all agent-dimension blocks present")
+
+    # 1b. metadata carries a Role field (the persona the target adopts).
+    if find_block(sections, "metadata") is not None:
+        if re.search(r"\brole\s*:", meta_body, re.IGNORECASE):
+            r.ok("metadata has a Role field")
+        else:
+            r.err('metadata is missing a "Role:" field (the persona the target adopts; '
+                  '"n/a" for a plain library)')
 
     # 2. out of scope non-empty.
     oos = find_block(sections, "out of scope")
@@ -192,6 +217,8 @@ def lint(text: str) -> Report:
     good_tags = sorted({t for t in PHASE_TAG_RE.findall(clean) if WELLFORMED_PHASE_RE.match(t)})
     if good_tags:
         r.ok(f"phase tags present: {', '.join(good_tags)}")
+    elif build_class == "zero-distance":
+        r.ok("no [P#] phase tags - zero-distance target (artifact emitted directly); phasing n/a")
     else:
         r.warn("no [P#] phase tags found - the build prompt can't be scoped to a phase")
 

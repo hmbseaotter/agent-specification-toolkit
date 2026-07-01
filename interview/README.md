@@ -1,11 +1,13 @@
 # Specification Interviewer
 
-A guided, reasoning-driven interview that helps — and gently forces — you to supply every input a
-**building agent** (the AI coding tool that writes the code — Claude Code, Cursor, Aider, …) needs
-before it builds your target **agent or feature**. It removes the failure mode
-the reference cards warn about: deferring the hard questions until the code already exists. Its
-outputs are a **complete specification** (the production-grade target) written to `specs/<slug>.md`,
-a reviewed **assumptions list**, and a **build prompt scoped to the build phase you choose**.
+A guided, reasoning-driven interview that helps — and gently forces — you to supply every input needed
+to produce your target **agent, feature, or skill**. It removes the failure mode the reference cards
+warn about: deferring the hard questions until the code already exists. Its outputs are a **complete
+specification** (the production-grade target) written to `specs/<slug>.md`, a reviewed **assumptions
+list**, and then — depending on the target's **build class** — either a **build prompt scoped to the
+build phase you choose** (a build-required target, handed to a *building agent* — the AI coding tool
+that writes the code: Claude Code, Cursor, Aider, …) or the **emitted artifact** itself (`SKILL.md` /
+`AGENT.md`) for a zero-distance target (a skill or declarative agent), which needs no separate build.
 
 ## Form factor: a Claude Code skill
 
@@ -50,20 +52,23 @@ README — the project-local default (running it from this repo) needs no instal
 4. **Assumptions review gate.** Lists every assumption it made (each with the risk if it's wrong)
    and makes you confirm or correct them **before any build starts** — confirmed ones graduate into
    prior decisions.
-5. **Compose-your-phase menu.** The spec is the whole production-grade target; this step *slices* it
-   into build phases (it never shrinks the target). You choose how far this first push goes:
-   architecturally-required **skeleton** items are pre-selected and overridable only with an explicit
-   reason; optional items are multi-select, with dependency resolution so a phase can't be
-   incoherent.
+5. **Compose-your-phase menu** (build-required targets). The spec is the whole production-grade
+   target; this step *slices* it into build phases (it never shrinks the target). You choose how far
+   this first push goes: architecturally-required **skeleton** items are pre-selected and overridable
+   only with an explicit reason; optional items are multi-select, with dependency resolution so a
+   phase can't be incoherent. (A zero-distance target — skill / declarative agent — skips phasing.)
 6. **Build-readiness check.** A must-acknowledge guardrail that the session's **current model and
    effort** fit the chosen phase — flagging both *under-powered* (risking a poor build) and
    *over-powered* (wasting money). You explicitly proceed or adjust; the call is yours, on the
    record.
-7. **Three outputs, all under `specs/`.** The specification (`specs/<slug>.md`, which embeds the
-   reviewed assumptions list) and a phase-scoped **build prompt** written to
-   `specs/<slug>.build-prompt.md` — the file you hand to a **building agent** (Claude Code, Cursor,
-   Aider, …) to implement the chosen phase. Build only that phase; don't make choices that block
-   later ones.
+7. **Outputs, all under `specs/`.** The specification (`specs/<slug>.md`, which embeds the reviewed
+   assumptions list) plus, depending on the target's **build class**, one of two things. For a
+   **build-required** target: a phase-scoped **build prompt** (`specs/<slug>.build-prompt.md`) — the
+   file you hand to a **building agent** (Claude Code, Cursor, Aider, …) to implement the chosen phase
+   (build only that phase; don't make choices that block later ones), carrying a **plan-gate** so the
+   building agent presents a plan for your approval before writing code. For a **zero-distance** target
+   (skill / declarative agent): the interviewer **emits the artifact itself** (`SKILL.md` / `AGENT.md`)
+   because building it is deterministic — no separate build step.
 
 ## What it elicits (the spec blocks)
 
@@ -72,13 +77,18 @@ acceptance criteria** — plus, when the target is an agent, the **agent dimensi
 (including a mandatory STOP condition), triggers & scheduling, tools & permissions (+ "never do
 unattended" bright lines), state & memory, **model & cost routing + determinism boundary**, and
 failure & escalation. See [`templates/specification-template.md`](../templates/specification-template.md)
-for the full skeleton — the skill writes specs to match it.
+for the full skeleton — the skill writes specs to match it. Metadata also carries a **role** (the
+persona the target adopts) and a **build class** (zero-distance vs build-required) that drives which
+blocks apply and what the final output is.
 
 ### The determinism boundary (the core cost discipline)
 The interview forces you to name which operations are **plain code** (math, comparisons, parsing,
 validation, lookups — zero tokens) versus which genuinely need **LLM judgment** (and at which model
-tier). The AI is spent only where judgment is required; everything deterministic stays cheap. The
-skill applies the same rule to itself — mechanical checks go to the linter, not the model.
+tier). The AI is spent only where judgment is required; everything deterministic stays cheap. For that
+deterministic code it also asks for **type & value discipline** — static typing (type hints + a
+checker, so a float can't silently become an int) and immutability for constants — with "type-check
+passes" as an acceptance criterion. The skill applies the same rule to itself — mechanical checks go
+to the linter, not the model.
 
 ## Living specs
 

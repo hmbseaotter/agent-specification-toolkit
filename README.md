@@ -10,7 +10,7 @@ load-bearing word `SHALL` turns a preference into something a test can verify.
 
 Three different "agents" are easy to confuse — keep them straight:
 
-- **Target agent** — the agent (or feature) you're *specifying*; the thing to be built.
+- **Target agent** — the agent, feature, or skill you're *specifying*; the thing to be built.
 - **Building agent** — the AI coding tool that *reads the spec and writes the code*: e.g. Claude
   Code, Cursor, Aider, GitHub Copilot/Workspace, Windsurf.
 - **The interviewer** — the `/specify` skill in this repo. It *produces the specification*; it does
@@ -30,15 +30,17 @@ flowchart LR
 
 In short: **you + the interviewer write the spec → you review it → a building agent implements the
 chosen phase → the target agent exists.** The spec stays the source of truth; you amend it or advance
-a phase as the build proceeds (see [`interview/README.md`](interview/README.md)).
+a phase as the build proceeds (see [`interview/README.md`](interview/README.md)). For a **skill** or a
+**declarative agent** (harness-run markdown), there is no separate build step — the interviewer emits
+the `SKILL.md` / `AGENT.md` artifact directly, because "building" it is deterministic reformatting.
 
 ## Components
 
 | Component | Status | What it is |
 |-----------|--------|------------|
 | **Reference cards** (`reference-cards/`) | ✅ ready | Printable US-Letter infographics — the at-a-glance method. |
-| **Specification template** (`templates/`) | ✅ ready | Copy-paste skeleton you fill in, one file per agent (or feature). |
-| **Specification interviewer** (`/specify`) | ✅ ready | A Claude Code **skill** that runs a guided interview — helping and forcing you to supply every input an agent needs — then writes a complete specification to `specs/`, derives a phased build plan you choose from, and emits a phase-scoped build prompt. See `interview/README.md`. |
+| **Specification template** (`templates/`) | ✅ ready | Copy-paste skeleton you fill in, one file per agent, feature, or skill. |
+| **Specification interviewer** (`/specify`) | ✅ ready | A Claude Code **skill** that runs a guided interview — helping and forcing you to supply every input a target needs — then writes a complete specification to `specs/`. For a build-required target it derives a phased build plan you choose from and emits a phase-scoped build prompt; for a zero-distance target (skill / declarative agent) it emits the `SKILL.md` / `AGENT.md` artifact directly. See `interview/README.md`. |
 
 ## Layout
 
@@ -85,8 +87,11 @@ assumption for your review, then helps you choose how far this first build goes.
 it asks what you're specifying.
 
 **Where your outputs land.** Everything is written into `specs/` in the repo: the specification
-(`specs/<slug>.md`, which embeds the reviewed assumptions list) and a phase-scoped **build prompt**
-(`specs/<slug>.build-prompt.md`) — the file you hand to a *building agent* (see *Three roles* above).
+(`specs/<slug>.md`, which embeds the reviewed assumptions list) plus — depending on the target's
+**build class** — either a phase-scoped **build prompt** (`specs/<slug>.build-prompt.md`) you hand to
+a *building agent* (build-required targets; see *Three roles* above), or the emitted **artifact**
+itself (`SKILL.md` / `AGENT.md`) for a zero-distance target (a skill or declarative agent), which
+needs no separate build step.
 
 **Print a card.** Open the PDF in `reference-cards/` and print at *Actual size / 100%* (not
 "fit to page"), paper **Letter**, margins **None**.
