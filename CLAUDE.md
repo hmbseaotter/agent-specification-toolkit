@@ -18,6 +18,11 @@ Keep these straight throughout the docs:
 - `templates/specification-template.md` — the working skeleton end users copy per agent (or feature).
 - `interview/` — the Specification Interviewer. It is implemented as the `/specify` Claude Code
   **skill** at `.claude/skills/specify/SKILL.md`; `interview/README.md` documents it.
+- `examples/` — two worked `/specify` outputs, one per build class: a zero-distance **skill**
+  (`skill-csv-column-summariser/`: spec + emitted `SKILL.md` + companion script) and a
+  build-required **agent** (`agent-pr-triage/`: spec + plan-gated build prompt). The emitted
+  `SKILL.md` is illustrative — it lives under `examples/`, not `.claude/skills/`, so it is not
+  registered as a live skill. Both specs pass `scripts/lint_spec.py`.
 - `scripts/regenerate.py` — renders every `reference-cards/*.html` to a sibling PDF.
 - `scripts/lint_spec.py` — deterministic, stdlib-only completeness linter for a spec file
   (required blocks present, EARS/SHALL, no "should" in requirements, criteria present, phase
