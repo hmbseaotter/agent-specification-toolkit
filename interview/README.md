@@ -70,6 +70,11 @@ README — the project-local default (running it from this repo) needs no instal
    (skill / declarative agent): the interviewer **emits the artifact itself** (`SKILL.md` / `AGENT.md`)
    because building it is deterministic — no separate build step.
 
+## Worked examples
+See [`examples/`](../examples/) for two complete `/specify` outputs — a zero-distance **skill**
+(`skill-csv-column-summariser/`: spec + the emitted `SKILL.md` + companion script) and a
+build-required **agent** (`agent-pr-triage/`: spec + a plan-gated build prompt).
+
 ## What it elicits (the spec blocks)
 
 The six core blocks — **outcome, scope (in/out), constraints, prior decisions, requirements (EARS — Easy Approach to Requirements Syntax),

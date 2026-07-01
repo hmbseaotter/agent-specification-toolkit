@@ -41,6 +41,7 @@ the `SKILL.md` / `AGENT.md` artifact directly, because "building" it is determin
 | **Reference cards** (`reference-cards/`) | ✅ ready | Printable US-Letter infographics — the at-a-glance method. |
 | **Specification template** (`templates/`) | ✅ ready | Copy-paste skeleton you fill in, one file per agent, feature, or skill. |
 | **Specification interviewer** (`/specify`) | ✅ ready | A Claude Code **skill** that runs a guided interview — helping and forcing you to supply every input a target needs — then writes a complete specification to `specs/`. For a build-required target it derives a phased build plan you choose from and emits a phase-scoped build prompt; for a zero-distance target (skill / declarative agent) it emits the `SKILL.md` / `AGENT.md` artifact directly. See `interview/README.md`. |
+| **Examples** (`examples/`) | ✅ ready | Two worked `/specify` outputs — a zero-distance **skill** (spec + emitted `SKILL.md` + companion script) and a build-required **agent** (spec + a plan-gated build prompt). |
 
 ## Layout
 
@@ -55,6 +56,9 @@ the `SKILL.md` / `AGENT.md` artifact directly, because "building" it is determin
 │   └── specification-template.md               # the copy-paste skeleton
 ├── interview/
 │   └── README.md                               # how the interviewer works
+├── examples/
+│   ├── skill-csv-column-summariser/            # zero-distance example: spec + emitted SKILL.md
+│   └── agent-pr-triage/                        # build-required example: spec + build prompt
 ├── scripts/
 │   ├── regenerate.py                           # re-render every card's PDF from its HTML
 │   └── lint_spec.py                            # deterministic spec completeness linter (stdlib)
