@@ -20,7 +20,7 @@ body{font-family:'JB',monospace;color:var(--ink);background:#d9d3c6}
 @page{size:letter;margin:0}
 
 .page{
-  width:8.5in;height:11in;padding:.46in .5in .4in;position:relative;overflow:hidden;
+  width:8.5in;height:11in;padding:.25in .5in .4in;position:relative;overflow:hidden;
   background:
     radial-gradient(120% 80% at 0% 0%, #fffdf8 0%, rgba(26,18,56,0) 55%),
     radial-gradient(110% 70% at 100% 0%, #f6efdd 0%, rgba(37,18,58,0) 50%),
@@ -38,6 +38,12 @@ h1{font-family:'SG',sans-serif;font-weight:700;font-size:30px;line-height:.98;le
 h1 .hl{background:linear-gradient(90deg,var(--mag),var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
 .thesis{font-size:9.6px;line-height:1.5;color:var(--mut);max-width:6.9in;margin-top:.32rem}
 .thesis b{color:var(--ink);font-weight:700}
+.specify{margin-top:.4rem;font-size:8.8px;line-height:1.46;color:var(--ink);
+  background:linear-gradient(110deg,rgba(110,64,212,.10),rgba(110,64,212,0) 62%),linear-gradient(180deg,#fffdf7,#f7f1e3);
+  border:1px solid #ddd3f0;border-left:3px solid var(--vio);border-radius:7px;padding:6px 10px}
+.specify b{color:var(--vio);font-weight:700}
+.specify code{color:var(--shall);font-weight:700;background:#eef7f8;padding:0 3px;border-radius:3px}
+.specify .repo{color:var(--mut2);font-size:8px;letter-spacing:.01em}
 
 .sech{font-family:'SG',sans-serif;font-weight:700;font-size:11px;letter-spacing:.02em;color:var(--ink);
   display:flex;align-items:center;gap:.5rem;margin:.5rem 0 .34rem}
@@ -171,6 +177,7 @@ h1 .hl{background:linear-gradient(90deg,var(--mag),var(--vio));-webkit-backgroun
 
   <h1>Agent specifications an AI coding agent can <span class="hl">execute</span></h1>
   <p class="thesis">A spec is a <b>contract</b> the building agent reads, fails against, then writes code to pass. After two years of agents going off the rails, the model was almost never the thing letting me down — <b>the spec was</b>. Write it once, up front, and the gap between a vague prompt and an executed spec becomes the gap between <b>reviewing code and rewriting it</b>.</p>
+  <div class="specify"><b>Don't hand-write it.</b> The <code>/specify</code> interviewer builds this spec with you — one question at a time — then emits the phase-scoped build prompt (or, for a skill / declarative agent, the artifact itself). <span class="repo">&rarr; github.com/hmbseaotter/agent-specification-toolkit</span></div>
 
   <div class="sech">Anatomy of a specification <span class="sub">six blocks · written in this order · one file per agent, feature, or skill</span></div>
   <div class="grid6">

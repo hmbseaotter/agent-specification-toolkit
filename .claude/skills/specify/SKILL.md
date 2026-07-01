@@ -1,11 +1,14 @@
 ---
 name: specify
 description: >-
-  Interview the user to produce a complete, agent-ready specification (the production-grade
-  target), surface every assumption for review, slice the work into a phased build plan the user
-  composes, run a build-readiness (model/effort) check, then write the spec to specs/ and emit a
-  phase-scoped build prompt. Use when the user wants to specify a new agent or feature, or to
-  amend or advance an existing spec under specs/. Reasoning-driven, one question at a time.
+  Interview the user to produce a complete, agent-ready specification, then emit what is needed to
+  build it: for a coded feature/agent a phase-scoped build prompt, or for a skill / declarative agent
+  the artifact itself (SKILL.md / AGENT.md). Surfaces every assumption for review, slices the work
+  into a phased plan, and runs a build-readiness (model/effort) check. Use when the user wants to
+  design, specify, plan, or scope a new agent, feature, or skill; turn a vague idea, PRD, or plan
+  into a rigorous spec; write requirements in EARS / SHALL with testable acceptance criteria; produce
+  a build prompt for a coding agent; or amend / advance an existing spec under specs/. Reasoning-driven,
+  one question at a time.
 ---
 
 # Specification Interviewer
