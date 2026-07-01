@@ -10,7 +10,7 @@
 
 :root{
   --bg:#FBF7EC; --bg2:#F2ECDC; --panel:#FFFFFF; --panel2:#FBF7EC; --line:#E4DAC4;
-  --ink:#2A2536; --mut:#6A6380; --mut2:#8B8498;
+  --ink:#2A2536; --mut:#4E4766; --mut2:#6A6380;
   --shall:#0E97AD; --when:#3F51C9; --ifk:#D63A6B; --while:#B5760A; --where:#0F8A5B; --val:#0F8A5B;
   --mag:#CE2A8A; --vio:#6E40D4; --acid:#C6F432; --acink:#5C7A00;
 }
@@ -172,7 +172,7 @@ h1 .hl{background:linear-gradient(90deg,var(--mag),var(--vio));-webkit-backgroun
   <h1>Agent specifications an AI coding agent can <span class="hl">execute</span></h1>
   <p class="thesis">A spec is a <b>contract</b> the building agent reads, fails against, then writes code to pass. After two years of agents going off the rails, the model was almost never the thing letting me down — <b>the spec was</b>. Write it once, up front, and the gap between a vague prompt and an executed spec becomes the gap between <b>reviewing code and rewriting it</b>.</p>
 
-  <div class="sech">Anatomy of a specification <span class="sub">six blocks · written in this order · one file per agent or feature</span></div>
+  <div class="sech">Anatomy of a specification <span class="sub">six blocks · written in this order · one file per agent, feature, or skill</span></div>
   <div class="grid6">
     <div class="blk" style="--bl:var(--mag)">
       <span class="num">01</span><span class="nm">Outcome</span>
@@ -243,6 +243,8 @@ h1 .hl{background:linear-gradient(90deg,var(--mag),var(--vio));-webkit-backgroun
     </div>
   </div>
 
+  <div class="mvs" style="margin-top:9px"><b>● Type &amp; value discipline</b> for deterministic code: static typing so a <b>float can't silently become an int</b>, plus <b>immutability</b> for constants — a passing <code>type-check</code> is an acceptance criterion.</div>
+
   <div class="footer">
     <span class="added">Original framework by its author · <b>● additions in this edition</b> marked throughout</span>
     <span class="pagetag">1 / 2</span>
@@ -259,7 +261,12 @@ h1 .hl{background:linear-gradient(90deg,var(--mag),var(--vio));-webkit-backgroun
   <h1>Hand it off — then <span class="hl">keep it honest</span></h1>
   <p class="thesis">A spec is only as good as the prompt that delivers it. The order below front-loads the cheap step — <b>surfacing gaps before the agent fills them with guesses</b>. Every ambiguity it names is one you close before a wrong implementation buries itself three layers deep.</p>
 
-  <div class="sech">The hand-off prompt <span class="sub">point the agent at /specs/[agent].md — run in this order</span></div>
+  <div class="guards" style="margin-top:7px">
+    <div class="guard"><b style="color:var(--acink)">● Zero-distance</b> (skill / declarative agent): building is deterministic, so the interviewer <b>emits the artifact</b> (<code style="background:#f0eadb;padding:0 3px;border-radius:3px">SKILL.md</code>/<code style="background:#f0eadb;padding:0 3px;border-radius:3px">AGENT.md</code>) — no build step.</div>
+    <div class="guard"><b style="color:var(--acink)">● Build-required</b> (coded feature/agent): hand off the build prompt; the building agent <b>plans → you approve → builds</b>.</div>
+  </div>
+
+  <div class="sech">The hand-off prompt <span class="sub">build-required targets — point the agent at /specs/[agent].md, in this order</span></div>
   <div class="steps">
     <div class="step"><div class="si"></div><div class="st"><b>Restate the outcome</b> in one sentence. Confirms it actually parsed the anchor.</div></div>
     <div class="step"><div class="si"></div><div class="st"><span class="key">List ambiguities &amp; missing info before starting.</span> The single highest-leverage line — gaps surfaced now are gaps you get to close.</div></div>
@@ -291,7 +298,7 @@ h1 .hl{background:linear-gradient(90deg,var(--mag),var(--vio));-webkit-backgroun
   <div class="breaks">
     <div class="brk"><div class="bt">Too abstract</div><div class="bb">"SHALL provide a good UX" isn't a requirement. If a human can't test it, an agent can't verify it. <b>Every requirement needs a trigger and a response.</b></div></div>
     <div class="brk"><div class="bt">Criteria too loose</div><div class="bb">"Email sends correctly" fails; "<b>arrives within 5s of submission</b>" passes. Specificity is what makes a criterion verifiable.</div></div>
-    <div class="brk"><div class="bt">Whole project at once</div><div class="bb"><b>One spec per agent or feature</b>, a single meaningful unit. A spec for "the entire auth system" drifts and contradicts itself before the agent finishes reading.</div></div>
+    <div class="brk"><div class="bt">Whole project at once</div><div class="bb"><b>One spec per agent, feature, or skill</b>, a single meaningful unit. A spec for "the entire auth system" drifts and contradicts itself before the agent finishes reading.</div></div>
     <div class="brk"><div class="bt">Never updated</div><div class="bb">Treat the spec like code: <b>version it, update it the moment things change.</b> Otherwise the next session starts from a diverged source of truth.</div></div>
   </div>
 
@@ -300,9 +307,9 @@ h1 .hl{background:linear-gradient(90deg,var(--mag),var(--vio));-webkit-backgroun
     <div class="rt"><b>The regeneration test.</b> Could a building agent rebuild this from the spec alone and produce <b>behaviourally identical</b> output? If yes, the spec is good. If no, you've just located exactly what's missing.</div>
   </div>
 
-  <div class="sech">Put it to work <span class="sub">drop it in the repo · one spec per agent or feature · re-spec as you go</span></div>
+  <div class="sech">Put it to work <span class="sub">drop it in the repo · one spec per agent, feature, or skill · re-spec as you go</span></div>
   <div class="kit">
-    <div class="kc" style="--kc:var(--when)"><div class="kt">1 · Write</div><div class="kp">Save as <code>/specs/[agent].md</code> — six blocks, one agent or feature. Reuse the companion template.</div></div>
+    <div class="kc" style="--kc:var(--when)"><div class="kt">1 · Write</div><div class="kp">Save as <code>/specs/[agent].md</code> — six blocks, one agent, feature, or skill. Reuse the companion template.</div></div>
     <div class="kc" style="--kc:var(--while)"><div class="kt">2 · Hand off</div><div class="kp">Point the agent at the file with the 5-step prompt above. Let it list ambiguities first.</div></div>
     <div class="kc" style="--kc:var(--where)"><div class="kt">3 · Keep current</div><div class="kp">Agent appends <code>## decisions made</code>; you fold them back in &amp; re-run. Version the spec like code.</div></div>
   </div>
