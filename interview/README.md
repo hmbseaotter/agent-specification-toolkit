@@ -83,8 +83,8 @@ acceptance criteria** — plus, when the target is an agent, the **agent dimensi
 unattended" bright lines), state & memory, **model & cost routing + determinism boundary**, and
 failure & escalation. See [`templates/specification-template.md`](../templates/specification-template.md)
 for the full skeleton — the skill writes specs to match it. Metadata also carries a **role** (the
-persona the target adopts) and a **build class** (zero-distance vs build-required) that drives which
-blocks apply and what the final output is.
+stance the target adopts, where one genuinely helps — "n/a" otherwise) and a **build class**
+(zero-distance vs build-required) that drives which blocks apply and what the final output is.
 
 ### The determinism boundary (the core cost discipline)
 The interview forces you to name which operations are **plain code** (math, comparisons, parsing,

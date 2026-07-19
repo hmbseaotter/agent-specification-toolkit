@@ -115,8 +115,9 @@ where context disambiguates.
   - **Plan-gate in the build prompt** — build-required build prompts instruct the building agent to
     enter plan mode → present a plan → get human approval → build. A second human checkpoint whose
     value scales with distance (zero-distance targets skip it).
-  - **Role field** — the persona the target adopts, added to metadata (and the building agent's role
-    framing in the build prompt).
+  - **Role field** — the stance the target adopts, added to metadata (and the building agent's role
+    framing in the build prompt). Conditional, not automatic: included only where it sharpens tone
+    or domain expertise, "n/a" otherwise, and concrete behaviour is preferred over a persona label.
   - **Type & value discipline** — the determinism boundary now asks for BOTH static typing (type
     hints + a checker; a float must not silently become an int) AND immutability for constants
     (`Final` / frozen); "type-check passes" becomes an acceptance criterion. The determinism boundary

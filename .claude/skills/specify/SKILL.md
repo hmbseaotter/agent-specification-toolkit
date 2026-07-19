@@ -137,8 +137,11 @@ When the target is an **agent**, additionally hold the line on the agent dimensi
 ## STEP 1–4 — Elicit the blocks
 Work the blocks defined in `templates/specification-template.md`. In order:
 1. **metadata** — name, version (start 0.1.0), status DRAFT, date, author, target type, **build
-   class** (zero-distance | build-required), and **role** (the persona the target adopts — e.g.
-   "an expert reconciliation reviewer"; first-class for a skill/agent, "n/a" for a plain library).
+   class** (zero-distance | build-required), and **role** (the stance the target adopts — include
+   one only where it sharpens tone or domain expertise, e.g. "an expert reconciliation reviewer";
+   write "n/a" when a persona adds nothing, including plain libraries and purely procedural
+   targets. Prefer concrete behaviour over a persona label — "states the answer directly, then the
+   caveat" beats "a friendly assistant". Never manufacture a role just to fill the field.)
 2. **outcome** — what can a user DO that they couldn't before? Measurable.
 3. **in scope** / **out of scope (v1)** — concretes in, explicit exclusions out (with reasons).
 4. **Agent dimensions** (when the target is an agent; "n/a (not an agent)" for a plain feature):

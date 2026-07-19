@@ -30,7 +30,7 @@ requirement — cut it, or move it to "prior decisions."
 - Author(s): [who]
 - Target type: [skill | declarative agent (harness-run markdown, e.g. a Claude Code subagent) | feature | coded agent (CLI/background/GUI) | library/service]
 - Build class: [zero-distance | build-required]   <!-- zero-distance: the "build" is deterministic reformatting, so the artifact (SKILL.md / AGENT.md) is EMITTED directly by the interviewer — skills & declarative agents. build-required: building is real engineering, so a build prompt is handed to a building agent — coded features & agents. This is the spec-to-artifact distance axis. -->
-- Role: [the persona/role the target adopts, e.g. "an expert reconciliation reviewer"; first-class for a skill/agent, "n/a" for a plain library]
+- Role: [the stance the target adopts — include one only where it sharpens tone or domain expertise, e.g. "an expert reconciliation reviewer"; "n/a" when a persona adds nothing (plain libraries, purely procedural targets). Prefer concrete behaviour over a persona label; never invent one just to fill the field]
 
 ## outcome
 <!-- One paragraph. What can a user DO that they couldn't before? Make it measurable. -->

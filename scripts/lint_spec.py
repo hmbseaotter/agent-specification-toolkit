@@ -158,13 +158,14 @@ def lint(text: str) -> Report:
     else:
         r.ok("all agent-dimension blocks present")
 
-    # 1b. metadata carries a Role field (the persona the target adopts).
+    # 1b. metadata carries a Role field (the stance the target adopts).
+    # The FIELD must be present so the choice is deliberate; "n/a" is a valid answer.
     if find_block(sections, "metadata") is not None:
         if re.search(r"\brole\s*:", meta_body, re.IGNORECASE):
             r.ok("metadata has a Role field")
         else:
-            r.err('metadata is missing a "Role:" field (the persona the target adopts; '
-                  '"n/a" for a plain library)')
+            r.err('metadata is missing a "Role:" field (the stance the target adopts, where one '
+                  'sharpens tone or domain expertise; "n/a" when a persona adds nothing)')
 
     # 2. out of scope non-empty.
     oos = find_block(sections, "out of scope")
