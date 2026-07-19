@@ -287,8 +287,38 @@ All artifacts land in **`specs/`** so they are collectable and survive the sessi
    4. **Commit-now reminder (milestone).** Tell the user to COMMIT these new files now, before editing
       anything, so the pristine emitted state is versioned — git is the recovery path, and forgetting
       to commit at this milestone is how a clean state gets lost.
+   5. **Validate the frontmatter (deterministic, zero tokens).** Anthropic's `skill-creator` ships
+      `scripts/quick_validate.py`, which checks things `lint_spec.py` does not: frontmatter is valid
+      YAML, keys are limited to `{name, description, license, allowed-tools, metadata,
+      compatibility}`, `name` is kebab-case and ≤64 chars, `description` is ≤1024 chars with no
+      angle brackets. Two complementary linters, no overlap. If `skill-creator` is installed, run it
+      on the emitted skill and fix what it flags; if it is not, say so and move on rather than
+      hand-checking.
+   6. **Offer empirical validation (a spec cannot measure itself).** This skill reasons about
+      quality; it never MEASURES it. Anthropic's `skill-creator` does: it runs the new skill against
+      a no-skill baseline on real prompts, grades each run against assertions, reports pass-rate
+      variance across repeats, and — most usefully — measures how often the `description` actually
+      TRIGGERS, then optimises it against a held-out test split. Nothing here can substitute for
+      that. Tell the user it exists, that it is optional, and that the spec's **acceptance criteria
+      map directly onto its `evals/evals.json` expectations** — same shape, no translation needed.
+      For a non-expert user, name the concrete next step (invoke the `skill-creator` skill and ask
+      it to run evals on the skill just emitted), not just the tool's name.
 
    The spec in `specs/<slug>.md` remains the source of truth — amend it and re-emit to regenerate.
+
+   ### Spec-backed skills: improvements go through the spec, never in-place
+   Once a skill is emitted from a spec, `specs/<slug>.md` is UPSTREAM of the artifact. Any
+   improvement loop that edits the emitted `SKILL.md` directly — including `skill-creator`'s
+   iteration loop, which rewrites `SKILL.md` from feedback round after round, and its description
+   optimiser, which rewrites the `description` field — will silently drift the artifact away from
+   its spec and turn that spec into a lie.
+
+   So: take the finding, not the edit. Route feedback, grader output, and any optimised description
+   back through **amend mode** (fix the affected block, changelog line, version bump, re-run the
+   linter) and **re-emit**. Amend mode is deliberately cheap — no re-interview — so this costs
+   little per cycle and keeps the spec honest. If the user has already hand-edited a live copy,
+   say so plainly and reconcile it into the spec before re-emitting, rather than overwriting their
+   work.
 
 Finish by telling the user the file paths — `specs/<slug>.md` plus either
 `specs/<slug>.build-prompt.md` (build-required) or the emitted artifact paths, canonical + live
