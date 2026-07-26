@@ -38,11 +38,12 @@ def repo_root() -> Path:
 
 
 def sources(root: Path) -> dict:
-    """The three files a global install needs, laid out FLAT in the target so the skill can find
+    """The four files a global install needs, laid out FLAT in the target so the skill can find
     its companions next to SKILL.md (see the 'companion files' note in SKILL.md)."""
     return {
         "SKILL.md": root / ".claude" / "skills" / SKILL_NAME / "SKILL.md",
         "specification-template.md": root / "templates" / "specification-template.md",
+        "decision-record-template.md": root / "templates" / "decision-record-template.md",
         "lint_spec.py": root / "scripts" / "lint_spec.py",
     }
 

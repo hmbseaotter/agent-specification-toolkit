@@ -94,7 +94,8 @@ the `SKILL.md` / `AGENT.md` artifact directly, because "building" it is determin
 │   ├── agent-specification-field-guide.html   # editable source (fonts embedded — self-contained)
 │   └── agent-specification-field-guide.pdf     # print-ready, 2 pages, US Letter
 ├── templates/
-│   └── specification-template.md               # the copy-paste skeleton
+│   ├── specification-template.md               # the copy-paste skeleton
+│   └── decision-record-template.md             # companion: forks, options rejected, and why
 ├── interview/
 │   └── README.md                               # how the interviewer works
 ├── examples/

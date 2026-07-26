@@ -16,6 +16,10 @@ Keep these straight throughout the docs:
 - `reference-cards/*.html` — source of truth for each printable card. The matching `*.pdf` is a
   generated artifact; never hand-edit a PDF, regenerate it from its HTML.
 - `templates/specification-template.md` — the working skeleton end users copy per agent (or feature).
+- `templates/decision-record-template.md` — the companion record of every FORK the interview hit:
+  options considered, the choice, and why. The spec's `prior decisions` block carries the compact
+  what-and-why a building agent needs; this carries the **rejected alternatives**, which the spec
+  alone never shows. Emitted as `specs/<slug>.decisions.md` (STEP 7, output 4).
 - `interview/` — the Specification Interviewer. It is implemented as the `/specify` Claude Code
   **skill** at `.claude/skills/specify/SKILL.md`; `interview/README.md` documents it.
 - `examples/` — two worked `/specify` outputs, one per build class: a zero-distance **skill**

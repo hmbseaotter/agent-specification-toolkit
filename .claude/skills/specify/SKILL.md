@@ -24,10 +24,11 @@ with this toolkit). That file is the single source of truth for block names, the
 the agent dimensions, the `[P#]` phase-tag convention, the assumptions block, and the hand-off
 prompt. Read it before assembling a spec.
 
-**Companion files (where to find them):** this skill uses two helper files. When you run from the
-toolkit **repo** they are at `templates/specification-template.md` and `scripts/lint_spec.py`. When
-the skill is **installed globally** they sit **next to this `SKILL.md`** as
-`specification-template.md` and `lint_spec.py`. Use whichever layout is present — locate them with
+**Companion files (where to find them):** this skill uses three helper files. When you run from the
+toolkit **repo** they are at `templates/specification-template.md`,
+`templates/decision-record-template.md` and `scripts/lint_spec.py`. When the skill is **installed
+globally** they sit **next to this `SKILL.md`**, flat, as `specification-template.md`,
+`decision-record-template.md` and `lint_spec.py`. Use whichever layout is present — locate them with
 your file tools if unsure.
 
 **Target to specify:** take it from how the user invoked the skill (whatever they typed after the
@@ -82,6 +83,14 @@ spec-to-artifact **distance** axis: distance ~= 0 -> emit the artifact; distance
 - **Elicitation is conversational** (free-text Q&A). Use the structured **AskUserQuestion** tool
   only at the decision points that follow: the phase-composition menu (STEP 5) and the
   build-readiness acknowledgement (STEP 6).
+- **Keep a decision record as you go — it captures the options REJECTED.** Whenever the interview
+  resolves a genuine fork (real alternatives existed), append an entry: the fork, the options
+  considered, the decision, WHY, and any consequence or caveat it creates. Write it **during** the
+  interview, never reconstructed at the end — by then the alternatives are gone and only the winner
+  is remembered. This is **not** a duplicate of the spec's `prior decisions` block: that block is the
+  compact what-and-why a building agent needs, whereas the record is the fuller reasoning a human
+  needs later when asking "was X considered, and why did it lose?". Use
+  `templates/decision-record-template.md` for the entry shape, and emit it at STEP 7.
 
 ---
 
@@ -120,6 +129,13 @@ Name the problem plainly and ask again:
   — say so, and either cut it or move it to Prior decisions.
 - **Trace everything.** Every requirement → at least one specific, machine-checkable acceptance
   criterion.
+- **Enumerations need per-member semantics — never accept the list alone.** Whenever a requirement,
+  schema or contract introduces an enumerated set of values (a status, category, mode, severity,
+  disposition), elicit what EACH member means for the downstream logic and write it into the
+  requirements. "Status is MATCH or DISCREPANCY" is a data shape, not a behaviour; "a MATCH asserts
+  correctness and is therefore ineligible to be counted as a false positive" is the requirement. Any
+  member whose behaviour is left implicit gets INVENTED during the build — by the interviewer while
+  drafting, or worse by the building agent, silently.
 - **Probe the silent skips.** Explicitly ask which non-functional needs apply: security,
   performance, error handling, observability, accessibility, privacy — **plus these three, which are
   cheap to design in and expensive to retrofit:**
@@ -349,8 +365,18 @@ All artifacts land in **`specs/`** so they are collectable and survive the sessi
    say so plainly and reconcile it into the spec before re-emitting, rather than overwriting their
    work.
 
-Finish by telling the user the file paths — `specs/<slug>.md` plus either
-`specs/<slug>.build-prompt.md` (build-required) or the emitted artifact paths, canonical + live
+4. **Decision record** → write to **`specs/<slugified-name>.decisions.md`** (a repo-root
+   `DECISIONS.md` is fine when the repo holds a single spec). This is the record you have been
+   appending to throughout the interview — every fork, the options considered, the decision, why, and
+   its consequences — in the shape given by `templates/decision-record-template.md`. Record its path
+   in the spec's `Decision record:` metadata field so the two never drift apart, and tell the user
+   that **any fork the BUILD resolves gets appended there too**, or the record goes stale the moment
+   implementation starts. Emit this for every target class — a skill's forks are as worth recording as
+   a coded agent's. Skip it **only** if the interview genuinely resolved no forks, and say so plainly
+   rather than emitting an empty file.
+
+Finish by telling the user the file paths — `specs/<slug>.md` and `specs/<slug>.decisions.md`, plus
+either `specs/<slug>.build-prompt.md` (build-required) or the emitted artifact paths, canonical + live
 (zero-distance) — and **remind them to commit at this milestone** (versioning the pristine state).
 For build-required targets, note that **advancing to the next phase later is cheap** — no
 re-interview, just re-slice and emit the next build prompt.
