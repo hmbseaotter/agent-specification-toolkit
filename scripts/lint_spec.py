@@ -16,6 +16,14 @@ What it can verify deterministically (and what it cannot):
     linter would have missed, every one of them a decision applied in one place and missed in
     another): duplicated requirements, requirements filed under the wrong EARS pattern, and
     decision references with no entry in the companion decision record.
+  - NUMBERED SEQUENCES, as one general rule rather than per-case: any numbered set should be
+    unique and contiguous, because a duplicate makes every reference to it ambiguous and a gap
+    usually means an entry was deleted. Applied to decision numbers, phase tags (plus a
+    cross-check against the 'phase N' headings) and ordered markdown lists, in the spec and in
+    its sibling build prompt. Two of those three had already failed on a real project: a
+    decision collision found only by luck, and a build prompt reading 1..7, 10, 8, 9 -- which
+    survived because markdown renumbers on render, so the source was wrong while the output
+    looked right. Lazy numbering ('1. 1. 1.') is idiomatic and is not reported.
   - It still CANNOT verify that a spec and its build prompt agree. Knowing which facts must match
     requires understanding the spec, so that residue stays manual discipline - and the worst defect
     those passes found lived exactly there: a build prompt carrying a superseded match key while
@@ -184,6 +192,66 @@ def opening_keyword(req: str) -> str | None:
     s = PHASE_TAG_RE.sub("", s).strip()
     first = s.split(maxsplit=1)[0].rstrip(",").upper() if s.split() else ""
     return first if first in EARS_KEYWORDS else None
+
+
+def sequence_issues(numbers: list[int]) -> tuple[list[int], list[int]]:
+    """(duplicates, gaps) for any numbered set. The general rule: a numbered sequence
+    should be unique and contiguous, because a duplicate makes every reference to it
+    ambiguous and a gap usually means an entry was deleted.
+
+    Applied to decision numbers, phase tags and ordered lists alike -- the failure mode
+    is identical in all three, and it has occurred in two of them on this project."""
+    seen: dict[int, int] = {}
+    for n in numbers:
+        seen[n] = seen.get(n, 0) + 1
+    dupes = sorted(n for n, c in seen.items() if c > 1)
+    uniq = sorted(seen)
+    gaps = [n for n in range(uniq[0], uniq[-1] + 1) if n not in seen] if uniq else []
+    return dupes, gaps
+
+
+def ordered_list_runs(text: str) -> list[tuple[int, list[int]]]:
+    """(first line number, numbers) for each run of consecutive ordered-list items.
+
+    A run ends at any line that is not an ordered item at the same indent. Markdown
+    renumbers on render, so a mis-ordered source list looks perfectly correct in the
+    output -- which is precisely how a 1..7, 10, 8, 9 sequence survived review."""
+    runs: list[tuple[int, list[int]]] = []
+    current: list[int] = []
+    start = 0
+    indent = -1
+    for i, line in enumerate(text.splitlines(), start=1):
+        m = re.match(r"^(\s*)(\d+)\.\s", line)
+        if m and (indent in (-1, len(m.group(1)))):
+            if not current:
+                start, indent = i, len(m.group(1))
+            current.append(int(m.group(2)))
+            continue
+        if current and not line.strip().startswith(("   ", "\t")) and not line.startswith(" "):
+            if len(current) > 1:
+                runs.append((start, current))
+            current, indent = [], -1
+    if len(current) > 1:
+        runs.append((start, current))
+    return runs
+
+
+def numbering_faults(text: str, label: str) -> list[str]:
+    """Mis-ordered ordered lists in a markdown body.
+
+    An all-equal run is LEGITIMATE: '1. 1. 1.' is idiomatic lazy numbering that markdown
+    renders as 1, 2, 3. Only a run that is neither all-equal nor strictly incrementing by
+    one is reported."""
+    out: list[str] = []
+    for line_no, nums in ordered_list_runs(text):
+        if len(set(nums)) == 1:
+            continue
+        expected = list(range(nums[0], nums[0] + len(nums)))
+        if nums != expected:
+            out.append(f"{label} line {line_no}: ordered list runs "
+                       f"{', '.join(map(str, nums))} (expected "
+                       f"{nums[0]}..{nums[0] + len(nums) - 1})")
+    return out
 
 
 def find_decision_record(spec_path: Path) -> Path | None:
@@ -419,10 +487,32 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
             if dupes:
                 r.err(f"duplicate decision number(s) in {record.name}: {', '.join(dupes)} "
                       f"- every reference to them is ambiguous; renumber, never reuse")
-            elif headings:
-                highest = max(headings, key=lambda h: int(h[1:].split(".")[0]))
-                r.ok(f"{len(headings)} decision(s) in {record.name}, numbers unique "
-                     f"(highest: {highest} - append above this)")
+
+            # 11b. Gaps in the integer sequence. A record is meant to grow by appending and
+            #      to SUPERSEDE rather than delete, so a missing integer means an entry was
+            #      removed and its reasoning lost. Warning, not error: a gap breaks no
+            #      citation (a dangling one is caught below), and a number may be skipped
+            #      deliberately.
+            #
+            #      Integers and sub-numbered entries are counted SEPARATELY, and the message
+            #      says so. Reporting a bare total beside the highest number invites a
+            #      comparison that is wrong whenever the record is zero-indexed or uses
+            #      sub-numbers: 52 headings against a highest of D48 looks like four missing
+            #      entries, but is exactly D0..D48 plus three D11.x entries.
+            if headings and not dupes:
+                ints = sorted({int(h[1:].split(".")[0]) for h in headings})
+                subs = [h for h in headings if "." in h]
+                _, gaps = sequence_issues(ints)
+                sub_note = f", +{len(subs)} sub-numbered" if subs else ""
+                if gaps:
+                    shown = ", ".join(f"D{n}" for n in gaps[:8])
+                    more = "" if len(gaps) <= 8 else f" (and {len(gaps) - 8} more)"
+                    r.warn(f"gap(s) in the decision sequence: {shown}{more} - a record should "
+                           f"supersede rather than delete, so a missing number usually means "
+                           f"an entry was removed and its reasoning lost")
+                r.ok(f"{len(ints)} decision(s) D{ints[0]}-D{ints[-1]}{sub_note} in "
+                     f"{record.name}, numbers unique"
+                     f"{'' if gaps else ', no gaps'} - append above D{ints[-1]}")
 
             if refs:
                 dangling = [d for d in refs if d not in defined]
@@ -431,6 +521,53 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
                           f"{', '.join(dangling)}")
                 else:
                     r.ok(f"all {len(refs)} decision reference(s) resolve in {record.name}")
+
+    # 12. Phase-tag sequence. Same general rule as decision numbers: unique and
+    #     contiguous. A gap (P1, P2, P4) means a phase was dropped or a tag mistyped, and
+    #     since the build prompt is scoped to ONE phase, a missing phase is work that no
+    #     prompt will ever cover.
+    if good_tags:
+        phase_ints = sorted({int(t[2:-1].rstrip("abcdefghijklmnopqrstuvwxyz"))
+                             for t in good_tags})
+        _, phase_gaps = sequence_issues(phase_ints)
+        if phase_gaps:
+            r.warn(f"phase tag gap(s): {', '.join(f'[P{n}]' for n in phase_gaps)} - a phase "
+                   f"with no tagged items is work no build prompt will cover")
+        # Cross-check the tags actually used against the '### phase N' headings, so a
+        # documented phase with no items (or an item in an undocumented phase) surfaces.
+        phase_headings = {int(m) for m in re.findall(r"^###\s+phase\s+(\d+)", clean,
+                                                     re.MULTILINE | re.IGNORECASE)}
+        if phase_headings:
+            tagged_not_documented = sorted(set(phase_ints) - phase_headings)
+            documented_not_tagged = sorted(phase_headings - set(phase_ints))
+            if tagged_not_documented:
+                r.warn(f"phase(s) tagged but with no 'phase N' heading: "
+                       f"{', '.join(f'P{n}' for n in tagged_not_documented)}")
+            if documented_not_tagged:
+                r.warn(f"phase(s) with a heading but no tagged items: "
+                       f"{', '.join(f'P{n}' for n in documented_not_tagged)}")
+            if not tagged_not_documented and not documented_not_tagged:
+                r.ok(f"phase tags and phase headings agree ({len(phase_headings)} phases)")
+
+    # 13. Ordered-list numbering, in the spec and in its sibling build prompt. Markdown
+    #     renumbers on render, so a mis-ordered source list looks correct in the output --
+    #     which is how an insertion left a build prompt reading 1..7, 10, 8, 9 unnoticed.
+    #     The build prompt is checked for numbering ONLY: it has no required blocks, so
+    #     linting it as a spec would be meaningless.
+    faults = numbering_faults(clean, "spec")
+    if spec_path is not None:
+        companion = spec_path.parent / f"{spec_path.stem}.build-prompt.md"
+        if companion.is_file():
+            faults += numbering_faults(
+                strip_comments(companion.read_text(encoding="utf-8")), companion.name
+            )
+    if faults:
+        r.warn(f"{len(faults)} mis-ordered ordered list(s) - markdown renders them "
+               f"correctly, so the source is wrong while the output looks right")
+        for f in faults[:3]:
+            r.warn(f"    -> {f}")
+    else:
+        r.ok("ordered lists are sequential")
 
     # NOTE: the subject index is NOT checked here, deliberately. Verifying it means
     # re-deriving it, and the derivation belongs to scripts/subject_index.py, which owns

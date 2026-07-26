@@ -406,10 +406,15 @@ reading for what code can find.
 
 1. **Run the linter.** `python scripts/lint_spec.py specs/<slug>.md`. It catches duplicated requirements,
    requirements filed under the wrong EARS pattern, `(Dnn)` citations with no entry in the decision record, and
-   **duplicate decision numbers** — two sessions appending to one record will collide, and a duplicate is
-   invisible to the reference check, because `(D43)` resolves perfectly well when D43 is defined twice while
-   every reference to it has silently become ambiguous. The linter also reports the **highest** decision number,
-   so the next appender knows what to use: **read that before numbering anything.**
+   and **numbered-sequence faults**. That last one is a **general rule, not a decisions-only check**: any
+   numbered set should be unique and contiguous, because a duplicate makes every reference ambiguous and a gap
+   usually means an entry was deleted. It covers decision numbers, phase tags (cross-checked against the
+   `phase N` headings) and ordered markdown lists — in the spec *and* in its sibling build prompt.
+   Two of those had already failed in practice: a decision collision caught only by luck, and a build prompt
+   reading `1..7, 10, 8, 9`, which survived because **markdown renumbers on render, so the source was wrong
+   while the output looked right.** The linter reports the highest decision number, so **read that before
+   numbering anything** — and note a bare count will not match it whenever the record is zero-indexed or uses
+   sub-numbers (D0–D48 plus three D11.x entries is 52 headings, not 49).
 2. **Check the subject index** with `python scripts/subject_index.py specs/<slug>.md --check`, which regenerates
    and diffs; add the spec's own labels via `--subjects` if they differ from the defaults. **Never hand-maintain
    that table** — a hand-written one was measured wrong in six of nine rows, two of them wrong because it was
