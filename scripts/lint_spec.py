@@ -10,6 +10,8 @@ What it can verify deterministically (and what it cannot):
   - Structural: required blocks present, a Role field in metadata, requirements exist, acceptance
     criteria exist, out-of-scope non-empty, no "should" in the requirements block, phase tags
     well-formed (relaxed for zero-distance targets), leftover template placeholders / TODOs.
+    Phase tags are read only from bullet lines in the blocks that carry tagged items, so a tag
+    merely MENTIONED in prose is not reported as though it tagged something.
   - It CANNOT verify *semantic* traceability (does THIS requirement have a matching check?)
     without requirement IDs - that stays a human/LLM judgment. It reports a count proxy only.
 
@@ -51,6 +53,22 @@ AGENT_BLOCKS = [
     "state & memory",
     "model & cost routing",
     "failure & escalation",
+]
+
+# Blocks whose BULLET LINES carry phase tags, per the template: "tag each in-scope item, requirement,
+# and acceptance criterion". A bracketed tag anywhere else — a metadata note, prose inside
+# "implementation phases", a changelog entry — is a REFERENCE to a phase, not a tag on an item, and
+# must not be counted. Counting references made the linter report phases that did not exist.
+# NOTE: tags do NOT sit at a fixed offset within a bullet, so position alone cannot identify them:
+#   "- [P1] item"            (in scope)
+#   "- WHEN [P1] trigger"    (requirements, after the EARS keyword)
+#   "- Security: [P1] ..."   (non-functional, after a label)
+#   "- [ ] [P1] check"       (acceptance criteria, after the checkbox)
+# Which BLOCK the tag sits in is the reliable discriminator; where in the line is not.
+TAGGABLE_BLOCKS = [
+    "in scope",
+    "requirements",
+    "acceptance criteria",
 ]
 
 COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -98,6 +116,21 @@ def bullets(body: str) -> list[str]:
         s = line.strip()
         if s.startswith(("- ", "* ")) and len(s) > 2:
             out.append(s)
+    return out
+
+
+def tag_attempts(sections: dict[str, str]) -> list[str]:
+    """Every phase-tag attempt found where tags are MEANINGFUL: on bullet lines inside the blocks
+    that carry tagged items (see TAGGABLE_BLOCKS). Scanning the whole document instead would count a
+    tag merely *mentioned* in prose - e.g. a metadata note explaining that "[P1a]" is valid - and
+    report a phase that does not exist."""
+    out: list[str] = []
+    for key in TAGGABLE_BLOCKS:
+        body = find_block(sections, key)
+        if body is None:
+            continue
+        for line in bullets(body):
+            out.extend(PHASE_TAG_RE.findall(line))
     return out
 
 
@@ -214,12 +247,14 @@ def lint(text: str) -> Report:
         r.warn(f"fewer acceptance criteria ({crit_count}) than SHALL requirements "
                f"({len(shall_lines)}) - every requirement needs >=1 check; verify the mapping")
 
-    # 6. phase tags well-formed.
-    bad_tags = sorted({t for t in PHASE_TAG_RE.findall(clean) if not WELLFORMED_PHASE_RE.match(t)})
+    # 6. phase tags well-formed. Scanned only where tags are meaningful (see tag_attempts), so a tag
+    #    mentioned in prose is not reported as if it tagged an item.
+    attempts = tag_attempts(sections)
+    bad_tags = sorted({t for t in attempts if not WELLFORMED_PHASE_RE.match(t)})
     if bad_tags:
         r.err(f"malformed phase tag(s): {', '.join(bad_tags)} - use [P1], [P2], ... "
               f"or a sub-phase like [P1a]")
-    good_tags = sorted({t for t in PHASE_TAG_RE.findall(clean) if WELLFORMED_PHASE_RE.match(t)})
+    good_tags = sorted({t for t in attempts if WELLFORMED_PHASE_RE.match(t)})
     if good_tags:
         r.ok(f"phase tags present: {', '.join(good_tags)}")
     elif build_class == "zero-distance":
