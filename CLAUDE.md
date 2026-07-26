@@ -102,7 +102,11 @@ where context disambiguates.
     fits the chosen phase (flags under- AND over-powered); distinct from the agent's runtime model
     routing. The settings call, and its consequences, sit with the human, on the record.
   - **Living spec** — git-versioned; **amend mode** re-checks only the delta and logs to the
-    changelog; **advance-phase** re-slices without re-interviewing.
+    changelog; **advance-phase** re-slices without re-interviewing; **sweep mode** (STEP 8) maintains a
+    spec that has accrued decisions, since specs decay not from bad decisions but from good ones applied
+    in one place and missed in another. A `Last swept:` marker makes staleness visible, and the trigger is
+    **change-based** (~8–10 accrued decisions, before publishing, or at phase completion) rather than
+    calendar-based, because drift accumulates per decision and not per day.
   - **Distribution** — project-local zero-footprint default (clone + run; delete to remove); plus an
     opt-in, stdlib, cross-platform global installer (`install.py` / `uninstall.py`) with collision
     backups + manifest-based clean uninstall. Repo is MIT-licensed and will be published publicly.

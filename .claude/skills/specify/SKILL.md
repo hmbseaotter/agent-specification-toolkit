@@ -7,8 +7,8 @@ description: >-
   into a phased plan, and runs a build-readiness (model/effort) check. Use when the user wants to
   design, specify, plan, or scope a new agent, feature, or skill; turn a vague idea, PRD, or plan
   into a rigorous spec; write requirements in EARS / SHALL with testable acceptance criteria; produce
-  a build prompt for a coding agent; or amend / advance an existing spec under specs/. Reasoning-driven,
-  one question at a time.
+  a build prompt for a coding agent; or amend, advance, review, audit or sweep an existing spec under specs/
+  for drift and staleness. Reasoning-driven, one question at a time.
 ---
 
 # Specification Interviewer
@@ -49,7 +49,15 @@ Check `specs/` for a spec matching the target:
   next phase's `[P#]` tags, run the build-readiness check (STEP 6), and emit the next build prompt
   (STEP 7, output 3). The spec already contains the phases.
 
+- **Sweep** (the user asks to review, audit or maintain an existing spec, *or* the staleness check below
+  says one is due) → no interview. Run the maintenance checklist in **STEP 8**.
+
 If the mode is ambiguous, ask which one. Default to **New spec**.
+
+**Staleness check — run it in Amend and Advance-phase modes, before doing anything else.** Read the spec's
+`Last swept:` metadata line. If **~8–10 decisions have accrued since it**, tell the user a sweep is due and
+offer one before proceeding. Do not silently continue: a spec drifts fastest during exactly the runs that
+would trigger this, and nobody remembers to ask.
 
 ---
 
@@ -187,6 +195,12 @@ Work the blocks defined in `templates/specification-template.md`. In order:
    `installed copy, sha unknown` rather than omitting the field. This skill evolves, so without a
    stamp there is no way to tell which generation a spec belongs to — or whether a gap it exhibits
    was already fixed upstream.
+   Also stamp the **staleness marker** — `Last swept: <date> @ <spec version> @ D<highest decision>`, set to
+   the emit date for a new spec. It makes "is a sweep due?" answerable at a glance instead of from memory.
+   State the trigger on the line itself: **~8–10 accrued decisions, before publishing, or at phase completion
+   — whichever comes first.** Make it **change-based, never calendar-based**: drift accumulates per decision,
+   not per day, so a monthly reminder fires during quiet weeks and stays silent through exactly the heavy
+   design runs that cause the drift.
 2. **outcome** — what can a user DO that they couldn't before? Measurable.
 3. **in scope** / **out of scope (v1)** — concretes in, explicit exclusions out (with reasons).
 4. **Agent dimensions** (when the target is an agent; "n/a (not an agent)" for a plain feature):
@@ -380,5 +394,41 @@ either `specs/<slug>.build-prompt.md` (build-required) or the emitted artifact p
 (zero-distance) — and **remind them to commit at this milestone** (versioning the pristine state).
 For build-required targets, note that **advancing to the next phase later is cheap** — no
 re-interview, just re-slice and emit the next build prompt.
+
+---
+
+## STEP 8 — Sweep (maintenance mode)
+
+A spec decays as decisions accrue. Not from bad decisions — from **good ones applied in one place and missed
+in another**. Three passes over one real spec found **21 such defects**; the linter, at the time, could see
+none of them. Work the checklist **in order**: the cheap mechanical checks first, so no attention is spent
+reading for what code can find.
+
+1. **Run the linter.** `python scripts/lint_spec.py specs/<slug>.md`. It now catches duplicated requirements,
+   requirements filed under the wrong EARS pattern, and `(Dnn)` citations with no entry in the decision record.
+2. **Regenerate the subject index** with `python scripts/subject_index.py specs/<slug>.md` and diff it against
+   the one in the spec. **Never hand-maintain that table** — a hand-written one was measured wrong in six of
+   nine rows, two rows wrong because it was authored before a reorganisation in the same commit had finished.
+   A missing row is worse than no index: it does not merely fail to help, it misdirects the next sweep.
+3. **Read the spec whole** — not in answer-shaped slices. Every contradiction found this way was a later
+   decision applied in one place and missed in another, and only a whole read sees both places at once.
+4. **Compare the build prompt against the spec, fact by fact** — match key, category enumeration, fingerprint
+   count, component names, manifest contents, list numbering. **This is the highest-yield step and the one no
+   linter can do.** Six of eight findings in one pass were here, in a document the two earlier passes had never
+   opened. It matters most because the build prompt is what the *building agent reads*: a defect there is
+   invisible to anyone reading the spec, and nothing downstream corrects it.
+5. **Check supersessions.** Every decision that overturned an earlier one should leave an inline note on the
+   entry it replaced, so no decision can be read in isolation and believed.
+6. **Update `Last swept:`** in metadata — date, spec version, highest decision number. A marker nobody updates
+   silently stops meaning anything, which is worse than having none.
+
+Report findings grouped as **contradictions** (the spec says two different things), **stale** (superseded but
+not updated) and **structural**. Fix contradictions and stale passages together; keep any large reorganisation
+as its own separate change, so a semantic fix never rides along with a reshuffle.
+
+**When reorganising, pick an invariant and treat any deviation as a defect** — the SHALL count works well. One
+restructure briefly read 136 against an expected 127, revealing nine duplicates created by copying before
+deleting. Duplicated requirements are individually well-formed and read as entirely normal; nothing else would
+have caught them.
 
 Keep your tone conversational and concise. One question at a time during elicitation.
