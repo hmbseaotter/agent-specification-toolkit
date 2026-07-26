@@ -404,12 +404,20 @@ in another**. Three passes over one real spec found **21 such defects**; the lin
 none of them. Work the checklist **in order**: the cheap mechanical checks first, so no attention is spent
 reading for what code can find.
 
-1. **Run the linter.** `python scripts/lint_spec.py specs/<slug>.md`. It now catches duplicated requirements,
-   requirements filed under the wrong EARS pattern, and `(Dnn)` citations with no entry in the decision record.
-2. **Regenerate the subject index** with `python scripts/subject_index.py specs/<slug>.md` and diff it against
-   the one in the spec. **Never hand-maintain that table** — a hand-written one was measured wrong in six of
-   nine rows, two rows wrong because it was authored before a reorganisation in the same commit had finished.
-   A missing row is worse than no index: it does not merely fail to help, it misdirects the next sweep.
+1. **Run the linter.** `python scripts/lint_spec.py specs/<slug>.md`. It catches duplicated requirements,
+   requirements filed under the wrong EARS pattern, `(Dnn)` citations with no entry in the decision record, and
+   **duplicate decision numbers** — two sessions appending to one record will collide, and a duplicate is
+   invisible to the reference check, because `(D43)` resolves perfectly well when D43 is defined twice while
+   every reference to it has silently become ambiguous. The linter also reports the **highest** decision number,
+   so the next appender knows what to use: **read that before numbering anything.**
+2. **Check the subject index** with `python scripts/subject_index.py specs/<slug>.md --check`, which regenerates
+   and diffs; add the spec's own labels via `--subjects` if they differ from the defaults. **Never hand-maintain
+   that table** — a hand-written one was measured wrong in six of nine rows, two of them wrong because it was
+   authored before a reorganisation in the same commit had finished. A stale row is worse than no index: it does
+   not merely fail to help, it misdirects the next sweep to the wrong sections. The check lives in
+   `subject_index.py` and **not** in the linter on purpose: verifying the index means re-deriving it, and a
+   second derivation in the linter produced confident false positives on six rows. **The tool that owns a
+   derivation owns its check**, or the check becomes a second source of truth.
 3. **Read the spec whole** — not in answer-shaped slices. Every contradiction found this way was a later
    decision applied in one place and missed in another, and only a whole read sees both places at once.
 4. **Compare the build prompt against the spec, fact by fact** — match key, category enumeration, fingerprint

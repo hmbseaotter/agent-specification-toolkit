@@ -393,22 +393,52 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
     elif req_pairs:
         r.ok("EARS patterns match their subsections")
 
-    # 11. Decision references resolve. Needs the file path, so it is skipped for a bare-text lint.
+    # 11. Decision references resolve, and decision numbers are UNIQUE.
+    #     Needs the file path, so it is skipped for a bare-text lint.
     if spec_path is not None:
+        record = find_decision_record(spec_path)
         refs = sorted(set(DECISION_REF_RE.findall(clean)))
-        if refs:
-            record = find_decision_record(spec_path)
-            if record is None:
+        if record is None:
+            if refs:
                 r.warn(f"{len(refs)} decision reference(s) cited but no decision record found "
                        f"(looked for <slug>.decisions.md and DECISIONS.md)")
-            else:
-                defined = set(DECISION_DEF_RE.findall(record.read_text(encoding="utf-8")))
+        else:
+            record_text = record.read_text(encoding="utf-8")
+            headings = DECISION_DEF_RE.findall(record_text)
+            defined = set(headings)
+
+            # 11a. Duplicate decision numbers. Two sessions appending to one record WILL
+            #      collide, and a duplicate is invisible to the reference check below --
+            #      "(D43)" resolves perfectly well when D43 is defined twice, while every
+            #      reference to it has silently become ambiguous. Error-level: a decision
+            #      record whose numbers are not unique cannot be cited reliably at all.
+            counts: dict[str, int] = {}
+            for h in headings:
+                counts[h] = counts.get(h, 0) + 1
+            dupes = sorted(d for d, n in counts.items() if n > 1)
+            if dupes:
+                r.err(f"duplicate decision number(s) in {record.name}: {', '.join(dupes)} "
+                      f"- every reference to them is ambiguous; renumber, never reuse")
+            elif headings:
+                highest = max(headings, key=lambda h: int(h[1:].split(".")[0]))
+                r.ok(f"{len(headings)} decision(s) in {record.name}, numbers unique "
+                     f"(highest: {highest} - append above this)")
+
+            if refs:
                 dangling = [d for d in refs if d not in defined]
                 if dangling:
                     r.err(f"decision reference(s) with no entry in {record.name}: "
                           f"{', '.join(dangling)}")
                 else:
                     r.ok(f"all {len(refs)} decision reference(s) resolve in {record.name}")
+
+    # NOTE: the subject index is NOT checked here, deliberately. Verifying it means
+    # re-deriving it, and the derivation belongs to scripts/subject_index.py, which owns
+    # the per-subject patterns. Implementing a second derivation in this file produced
+    # confident false positives on six rows -- the two implementations simply disagreed.
+    # Use `subject_index.py --check <spec>` instead: the tool that owns a derivation owns
+    # its check, or the check becomes a second source of truth (D46's lesson, applied to
+    # this toolkit).
 
     return r
 

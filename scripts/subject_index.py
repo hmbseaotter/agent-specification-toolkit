@@ -58,10 +58,38 @@ def sections(lines: list[str], start: int, end: int) -> list[tuple[str, int, int
     return out
 
 
+INDEX_ROW_RE = re.compile(r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$", re.MULTILINE)
+INDEX_SKIP = frozenset({"subject", "sections containing its requirements"})
+
+
+def stored_index(text: str, valid_sections: set[str]) -> dict[str, set[str]]:
+    """Parse the subject-index table already written into the spec, if present.
+
+    A row counts only when its second cell names sections that all exist as '### '
+    headings — so the header, separator rows, and any unrelated two-column table are
+    ignored without needing to locate the table by position."""
+    out: dict[str, set[str]] = {}
+    for subject, cells in INDEX_ROW_RE.findall(text):
+        name = subject.strip().strip("*")
+        if not name or name.lower() in INDEX_SKIP or set(name) <= {"-", ":", " "}:
+            continue
+        listed = {p.strip().lower() for p in re.split(r"[·,]", cells) if p.strip()}
+        if listed and listed <= valid_sections:
+            out[name] = listed
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Generate a spec subject index.")
+    ap = argparse.ArgumentParser(
+        description="Generate a spec subject index, or --check the one already in it."
+    )
     ap.add_argument("spec")
     ap.add_argument("--subjects", help="JSON file of {name: regex}")
+    ap.add_argument(
+        "--check",
+        action="store_true",
+        help="compare the spec's stored index against a fresh derivation; exit 1 on drift",
+    )
     args = ap.parse_args(argv)
 
     path = Path(args.spec)
@@ -102,6 +130,35 @@ def main(argv: list[str] | None = None) -> int:
                     owned[subj].append(name)
         if seen == 0:
             empty.append(name)
+
+    if args.check:
+        # The index is a DERIVED value stored inside a source document -- the same shape as
+        # a cache with no invalidation, and it drifted twice on one real spec: six rows
+        # wrong while hand-written, then three stale after this generator improved and the
+        # stored copy was not refreshed. Discipline had already failed twice, so compare
+        # instead of trusting. A stale row does not merely fail to help; it misdirects the
+        # next sweep to the wrong sections.
+        valid = {name.lower() for name, _lo, _hi in sections(lines, start, end)}
+        stored = stored_index("\n".join(lines[start:end]), valid)
+        if not stored:
+            print("no subject index found in the requirements block; nothing to check")
+            return 0
+        drifted = sorted(s for s in stored
+                         if stored[s] != {x.lower() for x in owned.get(s, [])})
+        unknown = sorted(s for s in stored if s not in owned)
+        for s in drifted:
+            print(f"DRIFT  {s}")
+            print(f"       stored: {' · '.join(sorted(stored[s])) or '(none)'}")
+            print(f"       actual: {' · '.join(sorted(owned.get(s, []))) or '(none)'}")
+        for s in unknown:
+            print(f"UNKNOWN SUBJECT  {s} — not in the subject set this tool derives; "
+                  f"pass --subjects to match the spec's own labels")
+        if drifted:
+            print(f"\n{len(drifted)} of {len(stored)} row(s) drifted. Regenerate and paste:")
+            print(f"  python {Path(__file__).name} {args.spec}")
+            return 1
+        print(f"subject index matches actual section membership ({len(stored)} row(s))")
+        return 0
 
     print("| Subject | Sections containing its requirements |")
     print("|---|---|")
