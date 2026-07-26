@@ -98,6 +98,16 @@ plan of action, design notes, a diagram, or existing code / an existing spec.**
      question what is not. Only interview on what the inputs leave missing or unconvincing.
 - **If no:** proceed from scratch through the blocks.
 
+**Then establish these two before interviewing the blocks — do NOT infer them:**
+- **Where the artifacts land.** Ask for the target repo root / directory that will hold `specs/` and
+  the thing being built. Inferring it and hoping the assumptions gate catches a wrong guess wastes a
+  round trip at best, and writes files into the wrong tree at worst.
+- **Intended visibility / distribution** — private, internal, or public? Ask this whenever the target
+  touches secrets, credentials, held-out evaluation data, or proprietary content. It is a **design
+  input, not a release-day detail**: publishing changes the architecture (a public answer key
+  contradicts a "held-out ground truth" claim, forcing a public/held-out split), and the asymmetry is
+  brutal — a secret committed to public history is permanent.
+
 ---
 
 ## Hold the line — do not accept weak answers (this is the point)
@@ -111,7 +121,21 @@ Name the problem plainly and ask again:
 - **Trace everything.** Every requirement → at least one specific, machine-checkable acceptance
   criterion.
 - **Probe the silent skips.** Explicitly ask which non-functional needs apply: security,
-  performance, error handling, observability, accessibility, privacy.
+  performance, error handling, observability, accessibility, privacy — **plus these three, which are
+  cheap to design in and expensive to retrofit:**
+  - **Determinism / reproducibility.** Must identical inputs produce identical output, byte for byte?
+    Anything that scores, grades, compares, ranks or audits almost always must — and it will not
+    happen by accident: a stray timestamp, an unordered set, or a float where a decimal belongs
+    silently breaks it. If it matters, make it a requirement and name what is excluded from the
+    comparison (e.g. a run-metadata envelope holding exactly the non-deterministic fields).
+  - **Time & timezone discipline.** How are timestamps stored and compared? Bare local dates make
+    ordering ambiguous across zones — "whose midnight?" — which quietly corrupts any
+    before/after check. Push for one normalized representation (e.g. UTC ISO-8601 with a `Z` suffix
+    at a stated precision), with civil dates only as a declared, time-zone-carrying exception.
+  - **Data integrity.** How would a reader know an output was not altered? Version control alone is
+    only *conditionally* tamper-evident — history can be rewritten, and locally it can be erased
+    without trace. Where the output is deterministic, embedding fingerprints of the inputs so the
+    result can be RECOMPUTED is stronger and cheaper than any audit trail.
 
 When the target is an **agent**, additionally hold the line on the agent dimensions:
 - **Control surface MUST name a STOP condition.** An agent with no defined stop (completion / max
@@ -142,6 +166,11 @@ Work the blocks defined in `templates/specification-template.md`. In order:
    write "n/a" when a persona adds nothing, including plain libraries and purely procedural
    targets. Prefer concrete behaviour over a persona label — "states the answer directly, then the
    caveat" beats "a friendly assistant". Never manufacture a role just to fill the field.)
+   Also stamp **provenance** — `Produced by: /specify @ <short-sha>`. Get the sha with
+   `git -C <toolkit-repo> log -1 --format=%h`; if the toolkit repo is not reachable, write
+   `installed copy, sha unknown` rather than omitting the field. This skill evolves, so without a
+   stamp there is no way to tell which generation a spec belongs to — or whether a gap it exhibits
+   was already fixed upstream.
 2. **outcome** — what can a user DO that they couldn't before? Measurable.
 3. **in scope** / **out of scope (v1)** — concretes in, explicit exclusions out (with reasons).
 4. **Agent dimensions** (when the target is an agent; "n/a (not an agent)" for a plain feature):

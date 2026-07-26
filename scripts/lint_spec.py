@@ -57,9 +57,12 @@ COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 H2_RE = re.compile(r"^##\s+(.*?)\s*$", re.MULTILINE)
 CHECKBOX_RE = re.compile(r"^\s*[-*]\s+\[[ xX]\]\s*", re.MULTILINE)
 # A phase-tag *attempt*: "[P" followed by alphanumerics and a "]", with NO spaces — so guidance
-# prose like "[P2 items]" is not mistaken for a (malformed) tag. Well-formed is exactly "[P<int>]".
+# prose like "[P2 items]" is not mistaken for a (malformed) tag. Well-formed is "[P<int>]" with an
+# OPTIONAL lowercase sub-phase letter, so "[P1]" and "[P1a]" are both valid. Sub-phases are accepted
+# because STEP 6c actively encourages SPLITTING an oversized phase, and "P1a / P1b" is the natural
+# result — rejecting it forced a whole-spec renumber for no benefit.
 PHASE_TAG_RE = re.compile(r"\[[Pp][A-Za-z0-9]*\]")
-WELLFORMED_PHASE_RE = re.compile(r"^\[P\d+\]$")
+WELLFORMED_PHASE_RE = re.compile(r"^\[P\d+[a-z]?\]$")
 SHOULD_RE = re.compile(r"\bshould\b", re.IGNORECASE)
 
 
@@ -214,7 +217,8 @@ def lint(text: str) -> Report:
     # 6. phase tags well-formed.
     bad_tags = sorted({t for t in PHASE_TAG_RE.findall(clean) if not WELLFORMED_PHASE_RE.match(t)})
     if bad_tags:
-        r.err(f"malformed phase tag(s): {', '.join(bad_tags)} - use [P1], [P2], ...")
+        r.err(f"malformed phase tag(s): {', '.join(bad_tags)} - use [P1], [P2], ... "
+              f"or a sub-phase like [P1a]")
     good_tags = sorted({t for t in PHASE_TAG_RE.findall(clean) if WELLFORMED_PHASE_RE.match(t)})
     if good_tags:
         r.ok(f"phase tags present: {', '.join(good_tags)}")

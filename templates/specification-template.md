@@ -12,6 +12,8 @@ HOW TO USE
 5. Hand off with the prompt at the very bottom of this file.
 6. Phase tags: tag each in-scope item, requirement, and acceptance criterion with the
    implementation phase it belongs to — [P1], [P2], … (see "implementation phases" below).
+   An optional lowercase sub-phase letter is also valid — [P1a], [P1b] — for when an oversized
+   phase is split into consecutive pushes. Uppercase and multi-letter suffixes are NOT valid.
    The build prompt is scoped to ONE phase; the spec itself always stays the whole target.
 7. Build class (see metadata). A ZERO-DISTANCE target (a skill or a declarative agent) has no
    separate build step — "building" is deterministic reformatting, so the interviewer emits the
@@ -31,6 +33,13 @@ requirement — cut it, or move it to "prior decisions."
 - Target type: [skill | declarative agent (harness-run markdown, e.g. a Claude Code subagent) | feature | coded agent (CLI/background/GUI) | library/service]
 - Build class: [zero-distance | build-required]   <!-- zero-distance: the "build" is deterministic reformatting, so the artifact (SKILL.md / AGENT.md) is EMITTED directly by the interviewer — skills & declarative agents. build-required: building is real engineering, so a build prompt is handed to a building agent — coded features & agents. This is the spec-to-artifact distance axis. -->
 - Role: [the stance the target adopts — include one only where it sharpens tone or domain expertise, e.g. "an expert reconciliation reviewer"; "n/a" when a persona adds nothing (plain libraries, purely procedural targets). Prefer concrete behaviour over a persona label; never invent one just to fill the field]
+- Produced by: /specify @ [short-sha]   <!-- provenance: which generation of the toolkit wrote this spec. Get it with `git -C <toolkit-repo> log -1 --format=%h`; write "installed copy, sha unknown" if the repo is unreachable. The skill evolves — without this you cannot tell whether a gap a spec exhibits was already fixed upstream. -->
+- Artifacts land in: [repo root / directory holding specs/ and the built thing]   <!-- asked at STEP 0, never inferred -->
+- Visibility: [private | internal | public]   <!-- a DESIGN input wherever secrets, credentials, held-out eval data or proprietary content are involved — not a release-day detail -->
+- Decision record: [path, or "n/a"]   <!-- companion doc capturing forks and the options REJECTED; this block records decisions, not the alternatives weighed against them -->
+- Reproducibility: [required, byte-identical | required, logically equivalent | not required]   <!-- if anything scores, grades, compares or audits, this is almost always "required" — say so here so the requirements block cannot quietly skip it -->
+- Timestamp standard: [e.g. UTC ISO-8601 with Z suffix, second precision | n/a — no time handling]   <!-- prevents "whose midnight?" ambiguity in any before/after comparison -->
+- Integrity: [how a reader verifies output was not altered, e.g. embedded input fingerprints + recompute | n/a]
 
 ## outcome
 <!-- One paragraph. What can a user DO that they couldn't before? Make it measurable. -->

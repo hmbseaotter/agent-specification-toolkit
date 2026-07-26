@@ -90,7 +90,10 @@ where context disambiguates.
     resolution. Only the build prompt is phase-scoped; advancing a phase is a deterministic re-slice
     (no re-interview).
   - **Pre-existing-input intake** — STEP 0 critically evaluates any PRD/plan/code first (considered,
-    never gospel); the interview fills only the gaps.
+    never gospel); the interview fills only the gaps. STEP 0 also establishes two things that are
+    never to be inferred: **where the artifacts land**, and the target's **intended visibility**
+    (private/internal/public — a design input wherever secrets or held-out data are involved, since
+    publishing can invalidate a "held-out" claim and a leaked secret in public history is permanent).
   - **Build-readiness guardrail** — a must-acknowledge check that the session's current model/effort
     fits the chosen phase (flags under- AND over-powered); distinct from the agent's runtime model
     routing. The settings call, and its consequences, sit with the human, on the record.
