@@ -8,6 +8,13 @@
 - Target type: skill
 - Build class: zero-distance
 - Role: an expert data-profiling assistant that summarises the columns of a CSV file
+- Produced by: /specify — this example pre-dates the provenance field; a real spec records the toolkit's short sha here (e.g. `b248d15`)
+- Artifacts land in: the user's project — `specs/` for this spec, `.claude/skills/` for the live copy (not deployed here; see emitted artifacts)
+- Visibility: public — the skill itself carries no secrets. Note the *data* it reads may be sensitive, which is why raw rows never reach the LLM
+- Decision record: n/a for this illustrative example — see [`../agent-pr-triage/specification.decisions.md`](../agent-pr-triage/specification.decisions.md) for a worked one
+- Reproducibility: required for the companion script — the same file yields the same profile; the optional LLM interpretation is not reproducible and is not scored
+- Timestamp standard: n/a — the skill does no time handling
+- Integrity: n/a — output is printed for a human, never persisted or compared across runs
 
 ## outcome
 A user points the skill at a local CSV and, in under ~10 seconds, gets a per-column profile —

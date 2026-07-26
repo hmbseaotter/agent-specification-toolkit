@@ -10,6 +10,13 @@ spec-to-artifact distance axis that decides what the interview outputs.
 
 Each folder's `specification.md` is the whole production-grade target (the source of truth).
 
+`agent-pr-triage/` also carries a worked
+[`specification.decisions.md`](agent-pr-triage/specification.decisions.md) — the **decision-record**
+companion (STEP 7 output 4). A spec records *what* was decided; the decision record preserves the options
+that **lost**, and why. That is what a reader wants later when asking "was X considered?", and it is
+exactly what the spec alone can never show. The CSV example deliberately has none: one worked record
+teaches the shape, and duplicating it would add bulk without adding instruction.
+
 - **Zero-distance** targets (a skill, or a declarative agent) have a deterministic "build," so the
   interviewer *emits the artifact directly*. The `emitted/` folder shows that output. Note the
   `SKILL.md` there is **illustrative** — it lives under `examples/`, not `.claude/skills/`, so it is

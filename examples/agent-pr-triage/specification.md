@@ -8,6 +8,13 @@
 - Target type: coded agent
 - Build class: build-required
 - Role: a diligent maintainer's assistant that triages incoming pull requests
+- Produced by: /specify — this example pre-dates the provenance field; a real spec records the toolkit's short sha here (e.g. `b248d15`)
+- Artifacts land in: the repo deploying the webhook handler; this spec sits in its `specs/`
+- Visibility: internal — the agent holds a `GITHUB_TOKEN`, sourced from a secret store and never from the repo
+- Decision record: `specification.decisions.md` (beside this spec)
+- Reproducibility: not required end-to-end — the path->label mapping is deterministic and unit-testable, but the LLM summary comment is not byte-reproducible by design
+- Timestamp standard: UTC ISO-8601 with `Z` suffix, second precision — used by the head-SHA ledger and its 30-day expiry window
+- Integrity: n/a — outputs are GitHub-side labels and comments, independently auditable in the PR timeline
 
 ## outcome
 Within ~2 minutes of a PR opening it carries accurate area labels and a concise summary comment, so
