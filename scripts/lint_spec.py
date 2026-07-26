@@ -12,6 +12,14 @@ What it can verify deterministically (and what it cannot):
     well-formed (relaxed for zero-distance targets), leftover template placeholders / TODOs.
     Phase tags are read only from bullet lines in the blocks that carry tagged items, so a tag
     merely MENTIONED in prose is not reported as though it tagged something.
+  - Semantic drift (added after three maintenance passes over a real spec found 21 defects this
+    linter would have missed, every one of them a decision applied in one place and missed in
+    another): duplicated requirements, requirements filed under the wrong EARS pattern, and
+    decision references with no entry in the companion decision record.
+  - It still CANNOT verify that a spec and its build prompt agree. Knowing which facts must match
+    requires understanding the spec, so that residue stays manual discipline - and the worst defect
+    those passes found lived exactly there: a build prompt carrying a superseded match key while
+    the spec read correctly.
   - It CANNOT verify *semantic* traceability (does THIS requirement have a matching check?)
     without requirement IDs - that stays a human/LLM judgment. It reports a count proxy only.
 
@@ -71,6 +79,27 @@ TAGGABLE_BLOCKS = [
     "acceptance criteria",
 ]
 
+# EARS pattern expected of requirements in each '### ' subsection of the requirements block.
+# None = must NOT open with any pattern keyword (an always-active statement).
+# Sections absent from this map (e.g. "non-functional") are skipped: they conventionally use a
+# labelled form, "- Security: [P1] ...", which carries no EARS keyword at all.
+#
+# Why this check exists: over one real spec's lifetime the ubiquitous block silently accumulated
+# WHEN / IF / WHERE statements while event-driven accumulated always-true ones, until the
+# categorisation meant nothing. Nothing structural catches that -- a misfiled requirement is still a
+# well-formed requirement.
+EARS_EXPECTED: dict[str, str | None] = {
+    "ubiquitous": None,
+    "event-driven": "WHEN",
+    "state-driven": "WHILE",
+    "unwanted behavior": "IF",
+    "optional feature": "WHERE",
+}
+EARS_KEYWORDS = ("WHEN", "WHILE", "IF", "WHERE")
+
+DECISION_REF_RE = re.compile(r"\((D\d+(?:\.\d+)?)\)")
+DECISION_DEF_RE = re.compile(r"^##+\s+(D\d+(?:\.\d+)?)\b", re.MULTILINE)
+
 COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 H2_RE = re.compile(r"^##\s+(.*?)\s*$", re.MULTILINE)
 CHECKBOX_RE = re.compile(r"^\s*[-*]\s+\[[ xX]\]\s*", re.MULTILINE)
@@ -119,6 +148,64 @@ def bullets(body: str) -> list[str]:
     return out
 
 
+def requirement_lines(body: str) -> list[tuple[str, str]]:
+    """(subsection heading, full requirement text) for every bullet in a requirements block.
+
+    Continuation lines are folded in, so a wrapped requirement is compared as one string."""
+    out: list[tuple[str, str]] = []
+    heading = ""
+    lines = body.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("### "):
+            heading = line[4:].split("(")[0].strip().lower()
+            i += 1
+            continue
+        if line.strip().startswith(("- ", "* ")) and len(line.strip()) > 2:
+            text = line.strip()
+            j = i + 1
+            while (j < len(lines) and lines[j].startswith("  ")
+                   and not lines[j].strip().startswith(("- ", "* ", "#"))):
+                text += " " + lines[j].strip()
+                j += 1
+            out.append((heading, re.sub(r"\s+", " ", text)))
+            i = j
+            continue
+        i += 1
+    return out
+
+
+def opening_keyword(req: str) -> str | None:
+    """The EARS keyword a requirement opens with, ignoring bullet marker and phase tag.
+
+    Both orders occur in the wild and are valid: '- [P1] WHEN ...' and '- WHEN [P1] ...'."""
+    s = re.sub(r"^[-*]\s+", "", req)
+    s = PHASE_TAG_RE.sub("", s).strip()
+    first = s.split(maxsplit=1)[0].rstrip(",").upper() if s.split() else ""
+    return first if first in EARS_KEYWORDS else None
+
+
+def find_decision_record(spec_path: Path) -> Path | None:
+    """Locate the companion decision record: a sibling <slug>.decisions.md, or a DECISIONS.md at
+    the spec's directory or any ancestor up to three levels."""
+    sibling = spec_path.with_suffix("").with_suffix(".decisions.md")
+    if sibling.is_file():
+        return sibling
+    alt = spec_path.parent / f"{spec_path.stem}.decisions.md"
+    if alt.is_file():
+        return alt
+    d = spec_path.parent
+    for _ in range(4):
+        cand = d / "DECISIONS.md"
+        if cand.is_file():
+            return cand
+        if d.parent == d:
+            break
+        d = d.parent
+    return None
+
+
 def tag_attempts(sections: dict[str, str]) -> list[str]:
     """Every phase-tag attempt found where tags are MEANINGFUL: on bullet lines inside the blocks
     that carry tagged items (see TAGGABLE_BLOCKS). Scanning the whole document instead would count a
@@ -158,7 +245,7 @@ class Report:
         self.oks.append(msg)
 
 
-def lint(text: str) -> Report:
+def lint(text: str, spec_path: Path | None = None) -> Report:
     r = Report()
     clean = strip_comments(text)
     sections = parse_sections(clean)
@@ -272,6 +359,57 @@ def lint(text: str) -> Report:
     if meta and re.search(r"status:\s*draft", meta, re.IGNORECASE):
         r.warn('metadata status is still DRAFT')
 
+    reqs_body = find_block(sections, "requirements") or ""
+    req_pairs = requirement_lines(reqs_body)
+
+    # 9. Duplicate requirements. A refactor that copies before deleting leaves a duplicate that is
+    #    individually well-formed and reads as normal - invisible to every other check here.
+    seen: dict[str, int] = {}
+    for _, text in req_pairs:
+        seen[text] = seen.get(text, 0) + 1
+    dupes = [t for t, n in seen.items() if n > 1]
+    if dupes:
+        r.err(f"{len(dupes)} duplicated requirement(s) - the same text appears more than once")
+        for t in dupes[:3]:
+            r.err(f"    -> {t[:90]}")
+    elif req_pairs:
+        r.ok("no duplicated requirements")
+
+    # 10. EARS pattern filing: does each requirement sit under the right subsection?
+    misfiled: list[str] = []
+    for heading, text in req_pairs:
+        expected = next((v for k, v in EARS_EXPECTED.items() if heading.startswith(k)), "SKIP")
+        if expected == "SKIP":
+            continue
+        got = opening_keyword(text)
+        if expected is None and got is not None:
+            misfiled.append(f"'{got}' in '{heading}': {text[:70]}")
+        elif expected is not None and got != expected:
+            misfiled.append(f"expected '{expected}' in '{heading}': {text[:70]}")
+    if misfiled:
+        r.warn(f"{len(misfiled)} requirement(s) filed under the wrong EARS pattern")
+        for m in misfiled[:3]:
+            r.warn(f"    -> {m}")
+    elif req_pairs:
+        r.ok("EARS patterns match their subsections")
+
+    # 11. Decision references resolve. Needs the file path, so it is skipped for a bare-text lint.
+    if spec_path is not None:
+        refs = sorted(set(DECISION_REF_RE.findall(clean)))
+        if refs:
+            record = find_decision_record(spec_path)
+            if record is None:
+                r.warn(f"{len(refs)} decision reference(s) cited but no decision record found "
+                       f"(looked for <slug>.decisions.md and DECISIONS.md)")
+            else:
+                defined = set(DECISION_DEF_RE.findall(record.read_text(encoding="utf-8")))
+                dangling = [d for d in refs if d not in defined]
+                if dangling:
+                    r.err(f"decision reference(s) with no entry in {record.name}: "
+                          f"{', '.join(dangling)}")
+                else:
+                    r.ok(f"all {len(refs)} decision reference(s) resolve in {record.name}")
+
     return r
 
 
@@ -286,7 +424,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: no such file: {path}", file=sys.stderr)
         return 2
 
-    report = lint(path.read_text(encoding="utf-8"))
+    report = lint(path.read_text(encoding="utf-8"), path)
 
     print(f"lint: {path}")
     for msg in report.oks:
