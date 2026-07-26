@@ -119,6 +119,7 @@ CHECKBOX_RE = re.compile(r"^\s*[-*]\s+\[[ xX]\]\s*", re.MULTILINE)
 PHASE_TAG_RE = re.compile(r"\[[Pp][A-Za-z0-9]*\]")
 WELLFORMED_PHASE_RE = re.compile(r"^\[P\d+[a-z]?\]$")
 SHOULD_RE = re.compile(r"\bshould\b", re.IGNORECASE)
+SHALL_RE = re.compile(r"\bSHALL\b")
 
 
 def strip_comments(text: str) -> str:
@@ -371,13 +372,28 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
 
     # 3. requirements exist + no "should".
     reqs = find_block(sections, "requirements")
-    shall_lines = []
+    shall_reqs: list[str] = []
     if reqs is not None:
-        shall_lines = [ln.strip() for ln in reqs.splitlines() if "SHALL" in ln]
-        if not shall_lines:
+        # Count requirement BULLETS, via the same folding reader the duplicate and EARS-filing
+        # checks use. This counted physical lines containing "SHALL", which is not the same
+        # thing: a requirement wraps across several lines, and a continuation line frequently
+        # opens "SHALL NOT ...", so it counted twice. Measured on a real spec, adding five
+        # requirements moved the reported number by nine, and merely re-wrapping one
+        # requirement moved it while changing no requirement at all.
+        #
+        # That matters beyond tidiness. This number gets used as a checksum -- one spec's
+        # sweep caught nine silently duplicated requirements precisely because the count was
+        # compared against a remembered value -- and a checksum that responds to reflowing is
+        # worse than none, because it cries wolf and then gets ignored.
+        shall_reqs = [text for _heading, text in requirement_lines(reqs) if SHALL_RE.search(text)]
+        if not shall_reqs:
             r.err('"requirements" has no SHALL statement - requirements must be EARS + SHALL')
         else:
-            r.ok(f"{len(shall_lines)} SHALL requirement(s) found")
+            # Clauses reported alongside, and labelled as clauses: one requirement may carry
+            # several obligations ("SHALL cover X, SHALL exclude Y"), which is worth seeing but
+            # is not a count of requirements and must not be compared against one.
+            clauses = sum(len(SHALL_RE.findall(text)) for text in shall_reqs)
+            r.ok(f"{len(shall_reqs)} SHALL requirement(s) found, {clauses} SHALL clause(s)")
         should_hits = [ln.strip() for ln in reqs.splitlines() if SHOULD_RE.search(ln)]
         if should_hits:
             r.err(f'"should" appears in requirements ({len(should_hits)} line(s)) - a "should" is '
@@ -398,9 +414,13 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
             r.ok(f"{crit_count} acceptance criterion/criteria found")
 
     # 5. trace proxy (count only - true traceability is a judgment call).
-    if shall_lines and crit_count and crit_count < len(shall_lines):
+    #    Both sides are now per-bullet: criteria come from a `- [ ]` regex and requirements from
+    #    the folding reader. Against the old line count this compared bullets to lines, so it
+    #    fired on specs whose coverage was complete -- a warning that is always on is a warning
+    #    nobody reads, which cost it the one job it had.
+    if shall_reqs and crit_count and crit_count < len(shall_reqs):
         r.warn(f"fewer acceptance criteria ({crit_count}) than SHALL requirements "
-               f"({len(shall_lines)}) - every requirement needs >=1 check; verify the mapping")
+               f"({len(shall_reqs)}) - every requirement needs >=1 check; verify the mapping")
 
     # 6. phase tags well-formed. Scanned only where tags are meaningful (see tag_attempts), so a tag
     #    mentioned in prose is not reported as if it tagged an item.
