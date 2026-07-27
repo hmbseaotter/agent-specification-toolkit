@@ -269,6 +269,46 @@ def numbering_faults(text: str, label: str) -> list[str]:
     return out
 
 
+#: Tokens in a **Rule** line that name something which must exist: a module file, a test class,
+#: or a test function. Deliberately narrow -- prose words like "checked" satisfy the
+#: enforcement-shaped test above, but only a NAME can be resolved, and only names are resolved.
+ENFORCEMENT_TOKEN_RE = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*\.py|[A-Z][A-Za-z0-9]*Tests?|test_[a-z0-9_]{3,})\b"
+)
+
+_PROJECT_TEXT_SUFFIXES = frozenset({".py", ".md", ".toml", ".cfg", ".json", ".yml", ".yaml"})
+_PROJECT_SKIP_DIRS = frozenset({".git", "__pycache__", "node_modules", ".venv", "venv",
+                                "build", "dist", ".pytest_cache"})
+
+
+def _project_text(root: Path, skip: set[str], budget: int = 12_000_000) -> str | None:
+    """All readable source text under ``root``, concatenated, for name resolution.
+
+    Returns None when the tree is implausibly large, so the linter never becomes slow on a
+    repository it was pointed at by accident. Filenames are included as well as contents, since
+    a rule naming `test_defect_classes.py` is satisfied by that file existing even if nothing
+    mentions it in prose."""
+    chunks: list[str] = []
+    total = 0
+    for path in sorted(root.rglob("*")):
+        if _PROJECT_SKIP_DIRS & set(path.parts):
+            continue
+        if not path.is_file() or path.name in skip:
+            continue
+        chunks.append(path.name)
+        if path.suffix not in _PROJECT_TEXT_SUFFIXES:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        total += len(text)
+        if total > budget:
+            return None
+        chunks.append(text)
+    return "\n".join(chunks)
+
+
 def find_decision_record(spec_path: Path) -> Path | None:
     """Locate the companion decision record: a sibling <slug>.decisions.md, or a DECISIONS.md at
     the spec's directory or any ancestor up to three levels."""
@@ -602,12 +642,57 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
                           f"{', '.join(unenforced)} - name the check that holds it, or say "
                           f"\"judgment, not checkable\"; an unenforced rule is enforced by "
                           f"whoever remembers it")
-                if not missing_rule and not unenforced:
+                # The named enforcement must EXIST. Without this, the check confirmed that an
+                # enforcement-shaped word was present and nothing more: a rule reading
+                # "Enforced by test_completely_imaginary_module.py" passed clean. That is the
+                # very defect this mechanism was built to stop -- a claim nothing compares --
+                # sitting inside the mechanism. Demonstrated before being fixed.
+                #
+                # Resolution is by presence of the named token anywhere in the project's source,
+                # not by importing it: the linter must stay a text tool, and a token that appears
+                # nowhere is dangling regardless of how it would have been imported.
+                # Two different findings, deliberately graded apart. A rule naming SEVERAL things
+                # of which some exist is enforced -- the unresolved one is very often a tool in
+                # another repository, which this linter cannot see and should not pretend to.
+                # (Observed immediately: a rule correctly cited `lint_spec.py`, which lives in
+                # the toolkit rather than the project being linted.) A rule where NOTHING it
+                # names exists is unenforced, and that is an error.
+                dangling: list[str] = []
+                unenforceable: list[str] = []
+                haystack = _project_text(record.parent, skip={record.name, spec_path.name})
+                if haystack is not None:
+                    for b in blocks:
+                        did = b.split(None, 1)[0]
+                        if int(did[1:].split(".")[0]) < floor:
+                            continue
+                        m = RULE_LINE_RE.search(b)
+                        if m is None:
+                            continue
+                        tokens = sorted(set(ENFORCEMENT_TOKEN_RE.findall(m.group(0))))
+                        if not tokens:
+                            continue  # worded without a name; the word-level check above applies
+                        missing = [t for t in tokens if t not in haystack]
+                        if len(missing) == len(tokens):
+                            unenforceable.append(f"{did} -> {', '.join(missing)}")
+                        else:
+                            dangling.extend(f"{did} -> {t}" for t in missing)
+                if unenforceable:
+                    r.err(f"**Rule** line(s) where NOTHING named as enforcement exists in the "
+                          f"project: {'; '.join(unenforceable)} - a rule naming a test that does "
+                          f"not exist is the same unchecked claim the rule requirement exists to "
+                          f"prevent")
+                if dangling:
+                    r.warn(f"**Rule** line(s) cite enforcement not found in this project (other "
+                           f"named enforcement does resolve, so this is usually a tool in another "
+                           f"repository): {', '.join(dangling)}")
+
+                if not missing_rule and not unenforced and not unenforceable:
                     at_or_above = [b.split(None, 1)[0] for b in blocks
                                    if int(b.split(None, 1)[0][1:].split(".")[0]) >= floor]
+                    resolved = "" if haystack is None else ", enforcement resolved"
                     r.ok(f"every decision from D{floor} onward states an enforced **Rule** "
                          f"({len(at_or_above)} entr(y/ies); {len(with_rule)} of {len(blocks)} "
-                         f"overall)")
+                         f"overall{resolved})")
 
             # 11e. The negative space: what the last sweep did NOT check.
             #
