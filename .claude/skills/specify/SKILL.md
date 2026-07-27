@@ -434,6 +434,31 @@ reading for what code can find.
    entry it replaced, so no decision can be read in isolation and believed.
 6. **Update `Last swept:`** in metadata — date, spec version, highest decision number. A marker nobody updates
    silently stops meaning anything, which is worse than having none.
+7. **Write what you did NOT check**, into a `## Not checked — as of <version> @ <Dnn>` section of the decision
+   record. This is the step that shortens the ping-pong between two sessions reviewing each other's work.
+   Sweeps record what they fixed; the *recurring* cost is the gap a sweep knowingly leaves and never writes
+   down. Measured on one project: a staleness check iterated only the in-repo dataset splits, so the held-out
+   split's stamp was never compared. That was true, deliberate and unrecorded — and the next session found it as
+   a fresh defect one sweep later. Name the scope you drew and why, the thing you looked at and set aside, and
+   the assumption you leaned on. `lint_spec.py` requires the section to be non-empty and stamped with the same
+   version and decision as `Last swept:`, so it cannot quietly describe an earlier state.
+8. **State each new decision's rule, and what enforces it.** End every entry with `**Rule** — …` naming a test,
+   a scan, or explicitly *judgment, not checkable*. Opt in per record with `<!-- rules-required-from: D<n> -->`
+   and the linter enforces it from that number onward. The reason is not tidiness: on one project the rule
+   *"anything a tool says about itself is a claim, and every claim gets a check"* was written and **violated in
+   the same commit, by its own author**, and the next session found both violations as new defects. A rule
+   recorded as prose is applied by whoever remembers it, and memory does not survive a session boundary. Prefer
+   a rule the machine can hold to a rule the reader must carry.
+9. **Prefer a scanner to a fix when a class repeats.** If a defect is the third instance of one shape, the
+   deliverable is the detector, not the repair — and the cheapest moment to lock a class is the change that
+   empties it. One project carried a `sleep(1.05)` for four sweeps *while the neighbouring test's docstring
+   criticised it in writing*: the knowledge sat in the repository, beside the defect, and nothing acted on it.
+   A comment recording a problem is not a mechanism.
+10. **Check whether the gap was structural, not attentional.** When a check missed something, ask what set it
+    iterated. One project's staleness checks were correct and thorough over the wrong universe — they looped the
+    dev splits, so the held-out split could not be reached by any amount of care. Re-reading the checks would
+    never have found it; only re-reading the *enumeration* would. Where several checks assert "every X", give
+    them one shared enumeration of X so narrowing it becomes visible.
 
 Report findings grouped as **contradictions** (the spec says two different things), **stale** (superseded but
 not updated) and **structural**. Fix contradictions and stale passages together; keep any large reorganisation

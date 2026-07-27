@@ -120,6 +120,20 @@ PHASE_TAG_RE = re.compile(r"\[[Pp][A-Za-z0-9]*\]")
 WELLFORMED_PHASE_RE = re.compile(r"^\[P\d+[a-z]?\]$")
 SHOULD_RE = re.compile(r"\bshould\b", re.IGNORECASE)
 SHALL_RE = re.compile(r"\bSHALL\b")
+#: A decision's transferable rule, and evidence that something holds it. Enforcement counts
+#: as named if the line points at a test/check/scan/lint, or explicitly disclaims
+#: checkability -- "judgment, not checkable" is an acceptable and honest answer.
+RULE_LINE_RE = re.compile(r"^\*\*Rule\*\*[^\n]*(?:\n(?!\n)[^\n]*)*", re.MULTILINE)
+#: Word boundaries alone are wrong here: `\btest\b` does not match `test_defect_classes.py`,
+#: because `_` is a word character, nor `CriteriaNumberingTests`, and `\blint\b` misses
+#: `lint_spec.py`. Naming the enforcing module is the single most likely way to name
+#: enforcement, so the prefixes are open-ended. Caught by this check rejecting two rules that
+#: did name their tests.
+ENFORCEMENT_RE = re.compile(
+    r"(enforc\w*|test\w*|check\w*|scan\w*|lint\w*|assert\w*|guard\w*|"
+    r"judgment|judgement|not checkable|unenforceable)",
+    re.IGNORECASE,
+)
 
 
 def strip_comments(text: str) -> str:
@@ -541,6 +555,122 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
                           f"{', '.join(dangling)}")
                 else:
                     r.ok(f"all {len(refs)} decision reference(s) resolve in {record.name}")
+
+            # 11d. Every decision states a transferable RULE, and names what enforces it.
+            #
+            #      A decision record accumulates hard-won rules as prose, and prose is
+            #      enforced by whoever remembers it. Observed on a real project: a rule was
+            #      written ("anything a tool says about itself is a claim, and every claim
+            #      gets a check") and violated in the SAME commit, by its own author; the
+            #      next session found the two violations as fresh defects. Recording a rule
+            #      is not applying it, so the rule must say how it is held.
+            #
+            #      Retroactive enforcement would be useless here - on that project only 5 of
+            #      67 entries carried an extractable rule line - so the requirement starts at
+            #      a declared floor. Put `<!-- rules-required-from: D67 -->` in the record;
+            #      entries at or above it must carry `**Rule**` naming either a check or,
+            #      explicitly, that the rule is judgment and not checkable.
+            floor_m = re.search(r"<!--\s*rules-required-from:\s*D(\d+)\s*-->", record_text)
+            blocks = re.split(r"^##\s+(?=D\d)", record_text, flags=re.MULTILINE)[1:]
+            with_rule = [b.split(None, 1)[0] for b in blocks if RULE_LINE_RE.search(b)]
+            if floor_m is None:
+                if blocks:
+                    r.warn(f"{len(with_rule)} of {len(blocks)} decision(s) state a "
+                           f"transferable **Rule** - add `<!-- rules-required-from: D<n> -->` "
+                           f"to {record.name} to require one from D<n> onward, so new rules "
+                           f"arrive with their enforcement named")
+            else:
+                floor = int(floor_m.group(1))
+                missing_rule: list[str] = []
+                unenforced: list[str] = []
+                for b in blocks:
+                    did = b.split(None, 1)[0]
+                    num = int(did[1:].split(".")[0])
+                    if num < floor:
+                        continue
+                    m = RULE_LINE_RE.search(b)
+                    if m is None:
+                        missing_rule.append(did)
+                    elif not ENFORCEMENT_RE.search(m.group(0)):
+                        unenforced.append(did)
+                if missing_rule:
+                    r.err(f"decision(s) at or above the D{floor} floor with no **Rule** line: "
+                          f"{', '.join(missing_rule)} - state the transferable rule, or the "
+                          f"lesson stays local to the fix that taught it")
+                if unenforced:
+                    r.err(f"decision(s) whose **Rule** names no enforcement: "
+                          f"{', '.join(unenforced)} - name the check that holds it, or say "
+                          f"\"judgment, not checkable\"; an unenforced rule is enforced by "
+                          f"whoever remembers it")
+                if not missing_rule and not unenforced:
+                    at_or_above = [b.split(None, 1)[0] for b in blocks
+                                   if int(b.split(None, 1)[0][1:].split(".")[0]) >= floor]
+                    r.ok(f"every decision from D{floor} onward states an enforced **Rule** "
+                         f"({len(at_or_above)} entr(y/ies); {len(with_rule)} of {len(blocks)} "
+                         f"overall)")
+
+            # 11e. The negative space: what the last sweep did NOT check.
+            #
+            #      Sweeps record what they fixed. The gap that keeps recurring is what they
+            #      knowingly did not look at - one sweep's checks iterated only the in-repo
+            #      dataset splits, which was true, deliberate, and unwritten, so the next
+            #      sweep rediscovered it as a defect. Requiring the list is cheap; requiring
+            #      it to be CURRENT is what makes it worth reading, so it is compared against
+            #      the spec's own `Last swept` stamp.
+            not_checked = re.search(
+                r"^##\s+Not checked\b[^\n]*?(?:as of\s+(?P<stamp>[^\n]+))?$",
+                record_text, re.MULTILINE | re.IGNORECASE,
+            )
+            swept = re.search(r"Last swept:\s*([^\n*]+)", clean)
+            if not_checked is None:
+                if swept is not None:
+                    r.warn(f"{record.name} has no `## Not checked` section - a sweep records "
+                           f"what it fixed; the recurring gap is what it knowingly did not "
+                           f"look at, which the next reader needs first")
+            else:
+                stamp = (not_checked.group("stamp") or "").strip()
+                body = record_text[not_checked.end():].split("\n##", 1)[0].strip()
+                if not body:
+                    r.err('"## Not checked" is empty - "nothing" is itself a claim; if the '
+                          "sweep truly left no gap, say so and why")
+                elif not stamp:
+                    r.warn('"## Not checked" carries no "as of <version> @ <decision>" stamp, '
+                           "so nothing can tell whether it predates the last sweep")
+                elif swept is not None:
+                    tokens = [t for t in re.findall(r"[\w.]+", stamp) if any(c.isdigit() for c in t)]
+                    if tokens and not all(t in swept.group(1) for t in tokens):
+                        r.err(f'"## Not checked" is stamped {stamp!r} but the spec was last '
+                              f"swept at {swept.group(1).strip()!r} - the negative-space list "
+                              f"predates the last sweep, so it describes an earlier state")
+                    else:
+                        r.ok(f'"## Not checked" is current ({stamp})')
+
+    # 11f. Changelog versions are a numbered set too. Found live: two sessions each minted a
+    #      `0.18.0` entry for different work, in the same document, on the same day. Same class
+    #      as duplicate decision numbers and duplicate criterion ids -- and it kept slipping
+    #      through because each generalization of "check any numbered set" only reached the sets
+    #      the tool already happened to parse. So: enumerate the sets that exist, then confirm
+    #      the enforcement reaches each.
+    changelog = find_block(sections, "changelog")
+    if changelog is not None:
+        versions = re.findall(r"^-\s+(\d+\.\d+\.\d+)\b", changelog, re.MULTILINE)
+        if versions:
+            counts: dict[str, int] = {}
+            for v in versions:
+                counts[v] = counts.get(v, 0) + 1
+            dupes = sorted(v for v, n in counts.items() if n > 1)
+            if dupes:
+                r.err(f"duplicate changelog version(s): {', '.join(dupes)} - two entries claim "
+                      f"the same version, so neither identifies a state of the spec; renumber "
+                      f"the later one")
+            keyed = [tuple(int(p) for p in v.split(".")) for v in versions]
+            if keyed != sorted(keyed, reverse=True):
+                r.warn("changelog versions are not in descending order - newest first is the "
+                       "convention, and an out-of-order entry usually means one was inserted "
+                       "at the wrong place")
+            elif not dupes:
+                r.ok(f"{len(versions)} changelog version(s), unique and newest-first "
+                     f"({versions[0]} .. {versions[-1]})")
 
     # 12. Phase-tag sequence. Same general rule as decision numbers: unique and
     #     contiguous. A gap (P1, P2, P4) means a phase was dropped or a tag mistyped, and
