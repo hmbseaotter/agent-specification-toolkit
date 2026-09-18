@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -281,6 +282,49 @@ _PROJECT_SKIP_DIRS = frozenset({".git", "__pycache__", "node_modules", ".venv", 
                                 "build", "dist", ".pytest_cache"})
 
 
+def _project_root(start: Path, levels: int = 4) -> Path | None:
+    """The nearest directory at or above ``start`` holding a ``.git`` entry, or None.
+
+    A rule names a test, and tests live beside ``specs/``, not inside it: searching only the
+    decision record's own directory reported every rule naming a test under ``tests/`` as naming
+    nothing, on a project where each of those tests existed and passed. The repository is the
+    unit a rule's enforcement lives in, so that is the root searched. ``.git`` may be a file (a
+    worktree), hence ``exists`` rather than ``is_dir``.
+    """
+    here = start.resolve()
+    for candidate in (here, *list(here.parents)[:levels]):  # list(): slicing parents is 3.10+
+        if (candidate / ".git").exists():
+            return candidate
+    return None
+
+
+def _project_files(root: Path) -> list[Path] | None:
+    """The files git would version under ``root``: tracked, plus untracked but not ignored.
+
+    Asked of git rather than found by walking, because the project's ignore rules already
+    exclude caches, virtual environments and build output -- which a walk has to re-list by name,
+    and in practice never lists completely (``.mypy_cache`` alone holds megabytes of JSON). None
+    when git cannot answer, so the caller can fall back to walking.
+
+    Only asked when ``root`` is itself a repository's top. Anywhere else git climbs to whatever
+    repository encloses the directory -- a home directory under version control, say -- and
+    answers for that one: found by a control run in a scratch folder, which listed nothing and
+    reported an existing test as missing.
+    """
+    if not (root / ".git").exists():
+        return None
+    try:
+        listed = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            capture_output=True,
+            check=True,
+            timeout=60,
+        ).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return sorted(root / name for name in listed.decode("utf-8", errors="replace").split("\0") if name)
+
+
 def _project_text(root: Path, skip: set[str], budget: int = 12_000_000) -> str | None:
     """All readable source text under ``root``, concatenated, for name resolution.
 
@@ -290,9 +334,10 @@ def _project_text(root: Path, skip: set[str], budget: int = 12_000_000) -> str |
     mentions it in prose."""
     chunks: list[str] = []
     total = 0
-    for path in sorted(root.rglob("*")):
-        if _PROJECT_SKIP_DIRS & set(path.parts):
-            continue
+    files = _project_files(root)
+    if files is None:
+        files = [p for p in sorted(root.rglob("*")) if not (_PROJECT_SKIP_DIRS & set(p.parts))]
+    for path in files:
         if not path.is_file() or path.name in skip:
             continue
         chunks.append(path.name)
@@ -659,8 +704,19 @@ def lint(text: str, spec_path: Path | None = None) -> Report:
                 # names exists is unenforced, and that is an error.
                 dangling: list[str] = []
                 unenforceable: list[str] = []
-                haystack = _project_text(record.parent, skip={record.name, spec_path.name})
-                if haystack is not None:
+                # Outside a repository, the toolkit's own convention locates the project: every
+                # artifact lands in `specs/`, so the project is the directory holding it.
+                project = _project_root(record.parent) or (
+                    record.parent.parent if record.parent.name == "specs" else record.parent
+                )
+                haystack = _project_text(project, skip={record.name, spec_path.name})
+                if haystack is None:
+                    # Said rather than skipped: a check that goes quiet reads as a check that
+                    # passed, and the unresolved rules are then invisible.
+                    r.warn(f"**Rule** names were not resolved: the text under {project} exceeds "
+                           f"the linter's budget, so whether each named enforcement exists was "
+                           f"not checked")
+                else:
                     for b in blocks:
                         did = b.split(None, 1)[0]
                         if int(did[1:].split(".")[0]) < floor:
