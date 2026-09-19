@@ -52,6 +52,16 @@ def target_dir() -> Path:
     return Path.home() / ".claude" / "skills" / SKILL_NAME
 
 
+def write_manifest(tgt: Path, manifest: dict) -> None:
+    """Write the install manifest with LF line endings on every platform.
+
+    Left to the platform, Windows writes CRLF, so the manifest differed by machine and a backup
+    repository tracking it warned on every refresh. `Path.open` rather than `write_text` because
+    `write_text` only accepts `newline` from Python 3.10, and this installer supports 3.8."""
+    with (tgt / MANIFEST_NAME).open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps(manifest, indent=2))
+
+
 def _lines(p: Path) -> list[str]:
     """Text content as lines, ignoring line-ending style (CRLF vs LF) so it never
     reports a spurious difference from normalization alone."""
@@ -115,7 +125,7 @@ def update_install(srcs: dict, tgt: Path) -> int:
         "backup_dir": None,
         "updated_in_place": True,
     }
-    (tgt / MANIFEST_NAME).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    write_manifest(tgt, manifest)
     print(f"Updated /specify in place at {tgt} (no backup).")
     return 0
 
@@ -183,7 +193,7 @@ def main(argv=None) -> int:
         "files": installed + [MANIFEST_NAME],
         "backup_dir": str(backup) if backup else None,
     }
-    (tgt / MANIFEST_NAME).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    write_manifest(tgt, manifest)
 
     print("\nInstalled. /specify is now available in every project on this machine.")
     if backup:
