@@ -38,13 +38,17 @@ def repo_root() -> Path:
 
 
 def sources(root: Path) -> dict:
-    """The four files a global install needs, laid out FLAT in the target so the skill can find
-    its companions next to SKILL.md (see the 'companion files' note in SKILL.md)."""
+    """The five files a global install needs, laid out FLAT in the target so the skill can find
+    its companions next to SKILL.md (see the 'companion files' note in SKILL.md).
+
+    Every script the skill tells the user to run belongs here, or an installed copy cannot run
+    it. `regenerate.py` stays out: it renders the reference cards, and the skill never runs it."""
     return {
         "SKILL.md": root / ".claude" / "skills" / SKILL_NAME / "SKILL.md",
         "specification-template.md": root / "templates" / "specification-template.md",
         "decision-record-template.md": root / "templates" / "decision-record-template.md",
         "lint_spec.py": root / "scripts" / "lint_spec.py",
+        "subject_index.py": root / "scripts" / "subject_index.py",
     }
 
 

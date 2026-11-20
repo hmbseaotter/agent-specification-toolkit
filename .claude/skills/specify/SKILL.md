@@ -24,12 +24,12 @@ with this toolkit). That file is the single source of truth for block names, the
 the agent dimensions, the `[P#]` phase-tag convention, the assumptions block, and the hand-off
 prompt. Read it before assembling a spec.
 
-**Companion files (where to find them):** this skill uses three helper files. When you run from the
+**Companion files (where to find them):** this skill uses four helper files. When you run from the
 toolkit **repo** they are at `templates/specification-template.md`,
-`templates/decision-record-template.md` and `scripts/lint_spec.py`. When the skill is **installed
-globally** they sit **next to this `SKILL.md`**, flat, as `specification-template.md`,
-`decision-record-template.md` and `lint_spec.py`. Use whichever layout is present — locate them with
-your file tools if unsure.
+`templates/decision-record-template.md`, `scripts/lint_spec.py` and `scripts/subject_index.py`. When
+the skill is **installed globally** they sit **next to this `SKILL.md`**, flat, as
+`specification-template.md`, `decision-record-template.md`, `lint_spec.py` and `subject_index.py`.
+Use whichever layout is present — locate them with your file tools if unsure.
 
 **Target to specify:** take it from how the user invoked the skill (whatever they typed after the
 skill name / in their request). If that is empty, your **first question** is what we are
@@ -415,7 +415,7 @@ reading for what code can find.
    while the output looked right.** The linter reports the highest decision number, so **read that before
    numbering anything** — and note a bare count will not match it whenever the record is zero-indexed or uses
    sub-numbers (D0–D48 plus three D11.x entries is 52 headings, not 49).
-2. **Check the subject index** with `python scripts/subject_index.py specs/<slug>.md --check`, which regenerates
+2. **Check the subject index** with `python scripts/subject_index.py specs/<slug>.md --check` (or the copy beside this skill if installed globally), which regenerates
    and diffs; add the spec's own labels via `--subjects` if they differ from the defaults. **Never hand-maintain
    that table** — a hand-written one was measured wrong in six of nine rows, two of them wrong because it was
    authored before a reorganisation in the same commit had finished. A stale row is worse than no index: it does

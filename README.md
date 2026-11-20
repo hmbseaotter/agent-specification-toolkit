@@ -106,7 +106,8 @@ the `SKILL.md` / `AGENT.md` artifact directly, because "building" it is determin
 │   └── workflow.png                            # static PNG fallback (regenerate from the .mmd)
 ├── scripts/
 │   ├── regenerate.py                           # re-render every card's PDF from its HTML
-│   └── lint_spec.py                            # deterministic spec completeness linter (stdlib)
+│   ├── lint_spec.py                            # deterministic spec completeness linter (stdlib)
+│   └── subject_index.py                        # generate / check a spec's subject index (stdlib)
 ├── install.py                                  # opt-in global installer (stdlib, cross-platform)
 ├── uninstall.py                                # clean uninstaller (manifest-based; restores backups)
 ├── requirements.txt

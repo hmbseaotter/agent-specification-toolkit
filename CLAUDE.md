@@ -35,11 +35,13 @@ Keep these straight throughout the docs:
   (required blocks present, EARS/SHALL, no "should" in requirements, criteria present, phase
   tags well-formed). ASCII output, cross-platform. The `/specify` skill runs it instead of
   reasoning through the checks — the determinism principle applied to the toolkit itself.
+- `scripts/subject_index.py` — stdlib-only generator and checker for a spec's subject index;
+  sweep mode (STEP 8, step 2) runs it with `--check` so the index is never hand-maintained.
 - `install.py` / `uninstall.py` — opt-in **global** install of the `/specify` skill into
   `~/.claude/skills/specify/` (stdlib, cross-platform). Installs SKILL.md + flat copies of the
-  template and linter (so the skill finds its companions beside it); backs up any collision,
-  writes a `.install-manifest.json`, and uninstalls cleanly (restoring backups). The project-local
-  default (run `claude` from the clone) needs neither.
+  two templates, the linter and the subject-index script (so the skill finds its companions
+  beside it); backs up any collision, writes a `.install-manifest.json`, and uninstalls cleanly
+  (restoring backups). The project-local default (run `claude` from the clone) needs neither.
 
 ## Build / render decisions (already made)
 - Cards are **US Letter, exactly 2 pages**, portrait. Keep to 2 pages.
@@ -158,3 +160,9 @@ where context disambiguates.
   `npx @mermaid-js/mermaid-cli -i docs/workflow.mmd -o docs/workflow.png -b white -s 2` (an HTML
   comment above the mermaid block records this). Rendered locally via the Playwright-cached Chromium
   (a puppeteer `executablePath` config) so no separate Chromium download is needed.
+- 2026-11-20: Every script the `/specify` skill tells the user to run ships with the global
+  install: it is listed in `install.py`'s `sources()` and copied flat beside the installed
+  `SKILL.md`. `scripts/subject_index.py` was missing, so a sweep run from an installed copy could
+  not check its subject index without doing by hand what the skill forbids; it is now the fifth
+  installed file. `scripts/regenerate.py` stays out, because it renders the reference cards and
+  the skill never runs it.
