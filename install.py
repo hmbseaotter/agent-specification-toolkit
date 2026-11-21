@@ -17,6 +17,7 @@ Usage:
     python install.py [--dry-run]
     python install.py --check      # report if the global install is stale (read-only, no changes)
     python install.py --update     # refresh an existing install in place, no backup (auto-refresh)
+    python install.py --self-test  # prove the unshipped-script check fires on a planted reference
 
 Cross-platform (Windows / macOS / Linux), Python 3.8+, standard library only.
 """
@@ -25,12 +26,14 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
 
 SKILL_NAME = "specify"
 MANIFEST_NAME = ".install-manifest.json"
+SCRIPT_REF = re.compile(r"\bscripts/([A-Za-z0-9_-]+\.py)\b")
 
 
 def repo_root() -> Path:
@@ -72,12 +75,52 @@ def _lines(p: Path) -> list[str]:
     return p.read_text(encoding="utf-8").splitlines()
 
 
+def unshipped_scripts(skill_text: str, root: Path, srcs: dict) -> list[str]:
+    """Scripts of THIS repo that the skill text names but sources() would not install.
+
+    A `scripts/<name>.py` reference counts only when `<name>.py` exists in this repo's
+    `scripts/` folder, so a script another tool ships (skill-creator's quick_validate.py)
+    is not flagged, and a repo script the skill never names (regenerate.py) is not either.
+    """
+    named = sorted(set(SCRIPT_REF.findall(skill_text)))
+    return [n for n in named if (root / "scripts" / n).is_file() and n not in srcs]
+
+
+def report_unshipped(root: Path, srcs: dict) -> int:
+    """Exit 0 when every repo script SKILL.md names is installed; 1 (with a report) when not."""
+    gaps = unshipped_scripts(srcs["SKILL.md"].read_text(encoding="utf-8"), root, srcs)
+    if gaps:
+        print("PACKAGING GAP: SKILL.md tells the user to run script(s) the install does not ship:")
+        for n in gaps:
+            print(f"  - scripts/{n}: add it to sources() in install.py")
+        return 1
+    return 0
+
+
+def self_test(root: Path, srcs: dict) -> int:
+    """Prove the unshipped-script check can fire: the real SKILL.md must pass, and the same
+    text with a planted reference to a real but uninstalled repo script must be flagged."""
+    text = srcs["SKILL.md"].read_text(encoding="utf-8")
+    planted = "regenerate.py"
+    real = unshipped_scripts(text, root, srcs)
+    caught = unshipped_scripts(text + f"\nRun `python scripts/{planted}`.\n", root, srcs)
+    ok = real == [] and caught == [planted]
+    print(f"real SKILL.md:     {'ok, nothing unshipped' if real == [] else 'GAP ' + ', '.join(real)}")
+    print(f"planted reference: {'ok, flagged ' + planted if caught == [planted] else 'NOT flagged'}")
+    print("self-test passed." if ok else "self-test FAILED.")
+    return 0 if ok else 1
+
+
 def check_install(srcs: dict) -> int:
-    """Read-only: is the global install present AND matching this repo?
+    """Read-only: does the install ship every repo script SKILL.md names, and is the global
+    install present AND matching this repo?
 
     Deterministic file comparison (the toolkit's own principle: a check code can do).
-    Exit 0 = up to date; 1 = not installed, or stale (a file is missing or differs).
+    Exit 0 = up to date; 1 = a packaging gap, not installed, or stale (a file is missing or
+    differs).
     """
+    if report_unshipped(repo_root(), srcs):
+        return 1
     tgt = target_dir()
     if not tgt.exists():
         print(f"not installed: no global /specify at {tgt}")
@@ -143,6 +186,9 @@ def main(argv=None) -> int:
     ap.add_argument("--update", action="store_true",
                     help="refresh an existing toolkit install IN PLACE, no backup (for auto-refresh "
                          "hooks); refuses if the target isn't a toolkit install")
+    ap.add_argument("--self-test", action="store_true",
+                    help="prove the check for scripts SKILL.md names but the install does not "
+                         "ship fires on a planted reference; change nothing (exit 0 = passed)")
     args = ap.parse_args(argv)
 
     root = repo_root()
@@ -153,6 +199,9 @@ def main(argv=None) -> int:
         print("       run this from inside the cloned agent-specification-toolkit repo.",
               file=sys.stderr)
         return 2
+
+    if args.self_test:
+        return self_test(root, srcs)
 
     if args.check:
         return check_install(srcs)

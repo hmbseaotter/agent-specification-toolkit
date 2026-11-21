@@ -166,3 +166,9 @@ where context disambiguates.
   not check its subject index without doing by hand what the skill forbids; it is now the fifth
   installed file. `scripts/regenerate.py` stays out, because it renders the reference cards and
   the skill never runs it.
+- 2026-11-20: The rule above is enforced by code, not by memory. `install.py --check` first reads
+  `SKILL.md` for every `scripts/<name>.py` it names and fails with a packaging gap when one exists
+  in this repo's `scripts/` but is missing from `sources()`; a name that is not a repo script
+  (skill-creator's `quick_validate.py`) is ignored. `install.py --self-test` proves the check can
+  fire: the real `SKILL.md` must pass, and the same text with a planted `scripts/regenerate.py`
+  reference must be flagged. No test suite exists yet, so the self-test is the check's own proof.
